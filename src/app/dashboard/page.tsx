@@ -1,7 +1,6 @@
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -10,9 +9,19 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { User, Mail, Calendar } from "lucide-react";
-import { SignOutButton } from "../_components/sign-out-button";
-import { ProtectedPostExample } from "../_components/protected-post-example";
+import { Button } from "@/components/ui/button";
+import {
+  User,
+  Mail,
+  Calendar,
+  Activity,
+  TrendingUp,
+  Shield,
+  Clock,
+  CheckCircle,
+  Settings,
+} from "lucide-react";
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -25,147 +34,234 @@ export default async function DashboardPage() {
 
   const { user } = session;
 
-  return (
-    <div className="from-background to-secondary/20 min-h-screen bg-gradient-to-b">
-      {/* Navigation */}
-      <nav className="bg-background/95 supports-[backdrop-filter]:bg-background/60 border-b backdrop-blur">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <div className="bg-primary h-8 w-8 rounded-full"></div>
-            <span className="text-xl font-bold">NextCelerator</span>
-          </div>
-          <div className="flex items-center space-x-4">
-            <span className="text-muted-foreground text-sm">
-              Welcome, {user.name}
-            </span>
-            <SignOutButton />
-          </div>
-        </div>
-      </nav>
+  // Calculate account age
+  const accountAge = Math.floor(
+    (Date.now() - new Date(user.createdAt).getTime()) / (1000 * 60 * 60 * 24),
+  );
 
-      {/* Dashboard Content */}
-      <main className="container mx-auto px-4 py-8">
-        <div className="mb-8">
-          <h1 className="mb-2 text-3xl font-bold">Dashboard</h1>
+  return (
+    <div className="flex-1 space-y-4 p-4 pt-6 md:p-8">
+      {/* Welcome Header */}
+      <div className="flex items-center justify-between space-y-2">
+        <div>
+          <h2 className="text-3xl font-bold tracking-tight">
+            Welcome back, {user.name?.split(" ")[0]}! 👋
+          </h2>
           <p className="text-muted-foreground">
-            Welcome to your personal dashboard. Manage your account and explore
-            features.
+            Here&apos;s what&apos;s happening with your account today.
           </p>
         </div>
+        <div className="flex items-center space-x-2">
+          <Button asChild>
+            <Link href="/dashboard/settings">
+              <Settings className="mr-2 h-4 w-4" />
+              Settings
+            </Link>
+          </Button>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {/* User Profile Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <User className="h-5 w-5" />
-                Profile Information
-              </CardTitle>
-              <CardDescription>Your account details</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <div className="flex items-center gap-2">
-                <User className="text-muted-foreground h-4 w-4" />
-                <span className="text-sm">{user.name}</span>
+      {/* Stats Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">
+              Account Status
+            </CardTitle>
+            <CheckCircle className="h-4 w-4 text-green-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Active</div>
+            <Badge
+              variant={user.emailVerified ? "default" : "secondary"}
+              className="mt-1"
+            >
+              {user.emailVerified ? "Verified" : "Pending"}
+            </Badge>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Account Age</CardTitle>
+            <Calendar className="text-muted-foreground h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{accountAge}</div>
+            <p className="text-muted-foreground text-xs">
+              {accountAge === 1 ? "day" : "days"} old
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Security</CardTitle>
+            <Shield className="h-4 w-4 text-blue-600" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Secure</div>
+            <p className="text-muted-foreground text-xs">Password protected</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Last Login</CardTitle>
+            <Clock className="text-muted-foreground h-4 w-4" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">Today</div>
+            <p className="text-muted-foreground text-xs">
+              {new Date().toLocaleDateString()}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Main Content Grid */}
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
+        {/* Profile Card */}
+        <Card className="col-span-4">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <User className="h-5 w-5" />
+              Profile Information
+            </CardTitle>
+            <CardDescription>
+              Your account details and preferences
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex items-center space-x-4">
+              <div className="bg-primary text-primary-foreground flex h-12 w-12 items-center justify-center rounded-full">
+                <User className="h-6 w-6" />
               </div>
-              <div className="flex items-center gap-2">
-                <Mail className="text-muted-foreground h-4 w-4" />
-                <span className="text-sm">{user.email}</span>
+              <div className="space-y-1">
+                <h4 className="text-sm font-semibold">{user.name}</h4>
+                <p className="text-muted-foreground flex items-center gap-1 text-sm">
+                  <Mail className="h-3 w-3" />
+                  {user.email}
+                </p>
               </div>
-              <div className="flex items-center gap-2">
-                <Calendar className="text-muted-foreground h-4 w-4" />
-                <span className="text-sm">
-                  Joined {new Date(user.createdAt).toLocaleDateString()}
-                </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Member since</p>
+                <p className="text-muted-foreground text-sm">
+                  {new Date(user.createdAt).toLocaleDateString("en-US", {
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
+                  })}
+                </p>
               </div>
-              <div className="pt-2">
-                <Badge variant={user.emailVerified ? "default" : "secondary"}>
-                  {user.emailVerified ? "Email Verified" : "Email Pending"}
+              <div className="space-y-2">
+                <p className="text-sm font-medium">Email Status</p>
+                <Badge variant={user.emailVerified ? "default" : "destructive"}>
+                  {user.emailVerified ? "Verified" : "Unverified"}
                 </Badge>
               </div>
-            </CardContent>
-          </Card>
+            </div>
 
-          {/* Quick Actions Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-              <CardDescription>Common tasks and settings</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <Button variant="outline" className="w-full justify-start">
+            <div className="pt-4">
+              <Button asChild variant="outline" className="w-full">
+                <Link href="/dashboard/settings">
+                  <Settings className="mr-2 h-4 w-4" />
+                  Update Profile
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card className="col-span-3">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Activity className="h-5 w-5" />
+              Quick Actions
+            </CardTitle>
+            <CardDescription>Common tasks and shortcuts</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Button asChild variant="outline" className="w-full justify-start">
+              <Link href="/dashboard/settings">
                 <User className="mr-2 h-4 w-4" />
                 Edit Profile
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Mail className="mr-2 h-4 w-4" />
-                Email Settings
-              </Button>
-              <Button variant="outline" className="w-full justify-start">
-                <Calendar className="mr-2 h-4 w-4" />
-                View Activity
-              </Button>
-            </CardContent>
-          </Card>
+              </Link>
+            </Button>
 
-          {/* Welcome Card */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Getting Started</CardTitle>
-              <CardDescription>Welcome to NextCelerator!</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-3">
+            <Button asChild variant="outline" className="w-full justify-start">
+              <Link href="/dashboard/settings">
+                <Shield className="mr-2 h-4 w-4" />
+                Security Settings
+              </Link>
+            </Button>
+
+            <Button asChild variant="outline" className="w-full justify-start">
+              <Link href="/dashboard/settings">
+                <Mail className="mr-2 h-4 w-4" />
+                Email Preferences
+              </Link>
+            </Button>
+
+            <div className="space-y-2 pt-4">
+              <h4 className="text-sm font-semibold">Need Help?</h4>
               <p className="text-muted-foreground text-sm">
-                You&apos;ve successfully set up authentication with Better Auth.
-                This dashboard demonstrates protected routes and session
+                Check out our documentation or contact support for assistance.
+              </p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Recent Activity / Features */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Application Features
+          </CardTitle>
+          <CardDescription>What you can do with NextCelerator</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Shield className="h-4 w-4 text-green-600" />
+                <h4 className="font-semibold">Secure Authentication</h4>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                Built with Better Auth for enterprise-grade security and session
                 management.
               </p>
-              <div className="space-y-2">
-                <Badge variant="outline">✅ Authentication</Badge>
-                <Badge variant="outline">✅ Session Management</Badge>
-                <Badge variant="outline">✅ Route Protection</Badge>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </div>
 
-        {/* Additional Content Section */}
-        <div className="mt-8">
-          <Card>
-            <CardHeader>
-              <CardTitle>Application Features</CardTitle>
-              <CardDescription>
-                This dashboard showcases the T3 stack with Better Auth
-                integration
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <h4 className="font-medium">🔐 Authentication Features</h4>
-                  <ul className="text-muted-foreground space-y-1 text-sm">
-                    <li>• Email/Password authentication</li>
-                    <li>• Session management with cookies</li>
-                    <li>• Route protection middleware</li>
-                    <li>• Secure logout functionality</li>
-                  </ul>
-                </div>
-                <div className="space-y-2">
-                  <h4 className="font-medium">🚀 Tech Stack</h4>
-                  <ul className="text-muted-foreground space-y-1 text-sm">
-                    <li>• Next.js 15 with App Router</li>
-                    <li>• Better Auth for authentication</li>
-                    <li>• Prisma ORM with PostgreSQL</li>
-                    <li>• Tailwind CSS for styling</li>
-                  </ul>
-                </div>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <Activity className="h-4 w-4 text-blue-600" />
+                <h4 className="font-semibold">Modern Dashboard</h4>
               </div>
-            </CardContent>
-          </Card>
+              <p className="text-muted-foreground text-sm">
+                Clean, responsive interface built with shadcn/ui and Tailwind
+                CSS.
+              </p>
+            </div>
 
-          <ProtectedPostExample />
-        </div>
-      </main>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="h-4 w-4 text-purple-600" />
+                <h4 className="font-semibold">Full-Stack Ready</h4>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                T3 Stack with Next.js 15, tRPC, Prisma, and TypeScript.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   );
 }

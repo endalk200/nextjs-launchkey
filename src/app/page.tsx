@@ -9,12 +9,12 @@ export default function HomePage() {
     <div className="from-background to-secondary/20 min-h-screen bg-gradient-to-b">
       {/* Navigation */}
       <nav className="bg-background/95 supports-[backdrop-filter]:bg-background/60 border-b backdrop-blur">
-        <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-2">
+        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
+          <div className="flex items-center gap-2">
             <div className="bg-primary h-8 w-8 rounded-full"></div>
             <span className="text-xl font-bold">NextCelerator</span>
           </div>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-4">
             <Button variant="ghost" asChild>
               <Link href="/signin">Sign In</Link>
             </Button>
@@ -26,7 +26,7 @@ export default function HomePage() {
       </nav>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-24 text-center">
+      <section className="mx-auto max-w-7xl px-4 py-24 text-center sm:px-6 lg:px-8">
         <Badge variant="outline" className="mb-4">
           🚀 Built with T3 Stack + Better Auth
         </Badge>
@@ -55,7 +55,7 @@ export default function HomePage() {
       </section>
 
       {/* Features Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="mb-12 text-center">
           <h2 className="mb-4 text-3xl font-bold">Everything You Need</h2>
           <p className="text-muted-foreground mx-auto max-w-2xl">
@@ -107,7 +107,7 @@ export default function HomePage() {
       </section>
 
       {/* CTA Section */}
-      <section className="container mx-auto px-4 py-16">
+      <section className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
         <div className="bg-primary/10 rounded-lg p-8 text-center">
           <h3 className="mb-4 text-2xl font-bold">Ready to Get Started?</h3>
           <p className="text-muted-foreground mb-6">
@@ -122,7 +122,7 @@ export default function HomePage() {
 
       {/* Footer */}
       <footer className="border-t py-8">
-        <div className="text-muted-foreground container mx-auto px-4 text-center">
+        <div className="text-muted-foreground mx-auto max-w-7xl px-4 text-center sm:px-6 lg:px-8">
           <p>&copy; 2024 NextCelerator. Built with ❤️ using the T3 Stack.</p>
         </div>
       </footer>
