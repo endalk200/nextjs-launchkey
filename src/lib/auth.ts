@@ -10,11 +10,25 @@ export const auth = betterAuth({
   }),
   emailAndPassword: {
     enabled: true,
-    requireEmailVerification: false, // Set to true in production
-    sendResetPassword: async ({ user, url }) => {
-      // Implement email sending logic here
-      console.log(`Reset password for ${user.email}: ${url}`);
+    requireEmailVerification: true, // Set to true in production
+    sendResetPassword: async ({ user, url, token }, request) => {
+      console.log({ user, url, token });
     },
+  },
+  emailVerification: {
+    sendVerificationEmail: async ({ user, url, token }, request) => {
+      console.log({ user, url, token });
+    },
+    sendOnSignUp: true,
+    sendOnSignIn: true,
+    callbackURL: "/dashboard",
+    async afterEmailVerification(user, request) {
+      // Your custom logic here, e.g., grant access to premium features
+      console.log(`${user.email} has been successfully verified!`);
+    },
+  },
+  advanced: {
+    useSecureCookies: process.env.NODE_ENV === "production",
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days

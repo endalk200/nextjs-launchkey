@@ -12,6 +12,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { User, Mail, Calendar } from "lucide-react";
 import { SignOutButton } from "../_components/sign-out-button";
+import { ProtectedPostExample } from "../_components/protected-post-example";
 
 export default async function DashboardPage() {
   const session = await auth.api.getSession({
@@ -161,6 +162,8 @@ export default async function DashboardPage() {
               </div>
             </CardContent>
           </Card>
+
+          <ProtectedPostExample />
         </div>
       </main>
     </div>
