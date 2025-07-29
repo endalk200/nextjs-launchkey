@@ -12,7 +12,13 @@ export const {
   forgetPassword,
   resetPassword,
   sendVerificationEmail,
-  accountInfo,
+  changeEmail,
+  changePassword,
+  updateUser,
+  deleteUser,
+  listSessions,
+  revokeSession,
+  getSession,
 } = authClient;
 
 export type Session = typeof authClient.$Infer.Session;

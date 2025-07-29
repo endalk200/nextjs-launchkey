@@ -3,6 +3,12 @@ import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
 import { db } from "@/server/db";
 import { env } from "@/env";
+import {
+  sendVerificationEmail,
+  sendPasswordResetEmail,
+  sendChangeEmailVerification,
+  sendDeleteAccountConfirmation,
+} from "@/lib/email";
 
 export const auth = betterAuth({
   database: prismaAdapter(db, {
@@ -12,9 +18,64 @@ export const auth = betterAuth({
     enabled: true,
     requireEmailVerification: true, // Set to true in production
     sendResetPassword: async ({ user, url, token }) => {
-      console.log({ user, url, token });
+      try {
+        await sendPasswordResetEmail({ user, url, token });
+      } catch (error) {
+        console.error("Failed to send password reset email:", error);
+        // In production, you might want to handle this more gracefully
+        // For now, we'll continue execution to not break the auth flow
+      }
     },
     revokeSessionsOnPasswordReset: true,
+  },
+  user: {
+    changeEmail: {
+      enabled: true,
+      sendChangeEmailVerification: async ({ user, newEmail, url, token }) => {
+        try {
+          await sendChangeEmailVerification({ user, newEmail, url, token });
+        } catch (error) {
+          console.error("Failed to send email change verification:", error);
+          // In production, you might want to handle this more gracefully
+          // For now, we'll continue execution to not break the auth flow
+        }
+      },
+    },
+    deleteUser: {
+      enabled: true,
+      sendDeleteAccountVerification: async ({ user, url, token }) => {
+        try {
+          // Create custom confirmation URL instead of auto-deletion URL
+          const confirmationUrl = `${env.BETTER_AUTH_URL}/dashboard/delete-account?token=${token}`;
+          await sendDeleteAccountConfirmation({
+            user,
+            url: confirmationUrl,
+            token,
+          });
+        } catch (error) {
+          console.error("Failed to send account deletion confirmation:", error);
+          // In production, you might want to handle this more gracefully
+          // For now, we'll continue execution to not break the auth flow
+        }
+      },
+      beforeDelete: async (user) => {
+        console.log(`Preparing to delete account for ${user.email}`);
+        // Perform any cleanup before deletion
+        console.log(`Starting deletion process for user ${user.id}`);
+      },
+      afterDelete: async (user) => {
+        console.log(`Account deleted for ${user.email}`);
+        console.log(
+          `User ${user.id} has been completely removed from the system`,
+        );
+        console.log(
+          `All sessions for user ${user.email} should now be revoked`,
+        );
+        // Perform cleanup after deletion
+        // Note: Better Auth automatically handles session revocation,
+        // but we log this for debugging purposes
+      },
+    },
   },
   socialProviders: {
     google: {
@@ -28,7 +89,13 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }) => {
-      console.log({ user, url, token });
+      try {
+        await sendVerificationEmail({ user, url, token });
+      } catch (error) {
+        console.error("Failed to send verification email:", error);
+        // In production, you might want to handle this more gracefully
+        // For now, we'll continue execution to not break the auth flow
+      }
     },
     sendOnSignUp: true,
     sendOnSignIn: true,
