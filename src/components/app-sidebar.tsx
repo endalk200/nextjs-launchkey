@@ -8,6 +8,7 @@ import {
   LogOut,
   Shield,
   HomeIcon,
+  SettingsIcon,
 } from "lucide-react";
 
 import {
@@ -38,6 +39,11 @@ const items = [
     title: "Dashboard",
     url: "/dashboard",
     icon: HomeIcon,
+  },
+  {
+    title: "Settings",
+    url: "/dashboard/settings",
+    icon: SettingsIcon,
   },
 ];
 
