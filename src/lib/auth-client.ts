@@ -4,4 +4,15 @@ export const authClient = createAuthClient({
   baseURL: process.env.NODE_ENV === "production" ? "" : "http://localhost:3000",
 });
 
-export const { signIn, signUp, signOut, useSession } = authClient;
+export const {
+  signIn,
+  signUp,
+  signOut,
+  useSession,
+  forgetPassword,
+  resetPassword,
+  sendVerificationEmail,
+  accountInfo,
+} = authClient;
+
+export type Session = typeof authClient.$Infer.Session;

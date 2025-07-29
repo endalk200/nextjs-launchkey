@@ -11,24 +11,35 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true, // Set to true in production
-    sendResetPassword: async ({ user, url, token }, request) => {
+    sendResetPassword: async ({ user, url, token }) => {
       console.log({ user, url, token });
+    },
+    revokeSessionsOnPasswordReset: true,
+  },
+  socialProviders: {
+    google: {
+      clientId: env.GOOGLE_CLIENT_ID,
+      clientSecret: env.GOOGLE_CLIENT_SECRET,
+    },
+    github: {
+      clientId: env.GITHUB_CLIENT_ID,
+      clientSecret: env.GITHUB_CLIENT_SECRET,
     },
   },
   emailVerification: {
-    sendVerificationEmail: async ({ user, url, token }, request) => {
+    sendVerificationEmail: async ({ user, url, token }) => {
       console.log({ user, url, token });
     },
     sendOnSignUp: true,
     sendOnSignIn: true,
-    callbackURL: "/dashboard",
-    async afterEmailVerification(user, request) {
+    callbackURL: "/verify-email",
+    async afterEmailVerification(user) {
       // Your custom logic here, e.g., grant access to premium features
       console.log(`${user.email} has been successfully verified!`);
     },
   },
   advanced: {
-    useSecureCookies: process.env.NODE_ENV === "production",
+    useSecureCookies: env.NODE_ENV === "production",
   },
   session: {
     expiresIn: 60 * 60 * 24 * 7, // 7 days
@@ -43,3 +54,5 @@ export const auth = betterAuth({
   baseURL: env.BETTER_AUTH_URL,
   trustedOrigins: ["http://localhost:3000"],
 });
+
+export type Session = typeof auth.$Infer.Session;
