@@ -1,0 +1,53 @@
+---
+globs: prisma/schema.prisma,src/**/*db*
+---
+
+# Prisma Database Conventions
+
+## Schema Design
+
+- Use PascalCase for model names: `model User {}`
+- Use camelCase for field names: `createdAt DateTime`
+- Always include `id`, `createdAt`, `updatedAt` fields for tracked entities
+- Use descriptive field names, avoid abbreviations
+
+## Model Patterns
+
+```prisma
+model Example {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  authorId  String
+  author    User     @relation(fields: [authorId], references: [id])
+
+  // Indexes for performance
+  @@index([authorId])
+  @@index([createdAt])
+}
+```
+
+## Database Operations
+
+- Import client: `import { db } from "@/server/db"`
+- Use transactions for multiple related operations
+- Always handle potential null returns from queries
+- Use `include` and `select` to optimize queries
+- Prefer `findUniqueOrThrow` when record must exist
+
+## Migrations
+
+- Run `pnpm db:push` for development schema changes
+- Use `pnpm db:generate` to regenerate client after schema changes
+- Use `pnpm db:studio` to inspect data visually
+- Always backup production data before schema changes
+
+## Performance
+
+- Add indexes for frequently queried fields
+- Use `@@index()` for single field indexes
+- Use `@@unique()` for unique constraints
+- Consider database-level constraints in schema

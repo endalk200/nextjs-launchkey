@@ -1,0 +1,56 @@
+---
+globs: src/app/**/*.tsx,src/**/*component*
+---
+
+# Next.js & Component Conventions
+
+## Component Structure
+
+- Use PascalCase for component names and file names
+- Place shared components in `src/app/_components/`
+- Use `"use client"` directive only when necessary (interactivity, hooks)
+- Default to Server Components when possible
+
+## Component Patterns
+
+```typescript
+// Server Component (default)
+export default function ServerPage() {
+  return <div>Static content</div>;
+}
+
+// Client Component
+"use client";
+export function InteractiveWidget() {
+  const [state, setState] = useState("");
+  return <button onClick={() => setState("clicked")}>Click me</button>;
+}
+```
+
+## Styling Approach
+
+- Use Tailwind CSS utility classes
+- Prefer utility classes over custom CSS
+- Use responsive prefixes: `sm:`, `md:`, `lg:`, `xl:`
+- Group related classes: layout, then styling, then responsive
+
+## State Management
+
+- Use `useState` for local component state
+- Use tRPC mutations with `api.useUtils()` for server state
+- Leverage React Query's caching via tRPC integration
+- Use `useSuspenseQuery` for required data
+
+## File Organization
+
+- Group related components in subdirectories
+- Use index files to export multiple components
+- Keep component files focused and single-purpose
+- Co-locate component-specific utilities and types
+
+## Performance
+
+- Use dynamic imports for heavy components: `const Heavy = dynamic(() => import('./Heavy'))`
+- Memoize expensive computations with `useMemo`
+- Use `useCallback` for event handlers passed to children
+- Leverage Next.js built-in optimizations (Image, Link, etc.)

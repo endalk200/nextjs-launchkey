@@ -25,7 +25,8 @@ beautiful UI components, and developer-first experience.
 
 ## Overview
 
-NextCelerator is a production-ready Next.js starter template that combines the power of the T3 Stack with modern authentication using Better Auth. It provides a solid foundation for building web applications with features like user authentication, session management, email verification, account settings, and more.
+NextCelerator is a production-ready Next.js starter template that combines the power of the T3 Stack
+with modern authentication using Better Auth. It provides a solid foundation for building web applications with features like user authentication, session management, email verification, account settings, and more.
 
 **Author**: Endalkachew Biruk ([@endalk200](https://github.com/endalk200))
 
