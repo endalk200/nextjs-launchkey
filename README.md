@@ -1,6 +1,7 @@
 # NextCelerator 🚀
 
-A modern, fully-featured Next.js starter template built with the T3 Stack, featuring comprehensive authentication, beautiful UI components, and developer-first experience.
+A modern, fully-featured Next.js starter template built with the T3 Stack, featuring comprehensive authentication,
+beautiful UI components, and developer-first experience.
 
 ## Table of Contents
 
