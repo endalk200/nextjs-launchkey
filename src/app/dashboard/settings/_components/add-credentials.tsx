@@ -23,13 +23,12 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { Lock } from "lucide-react";
-import { changePassword } from "@/lib/auth/auth-client";
+import { UserPlus } from "lucide-react";
+import { api } from "@/trpc/react";
 
-const passwordChangeSchema = z
+const addCredentialsSchema = z
     .object({
-        currentPassword: z.string().min(8, "Current password is required"),
-        newPassword: z
+        password: z
             .string()
             .min(8, "Password must be at least 8 characters")
             .regex(
@@ -38,52 +37,41 @@ const passwordChangeSchema = z
             ),
         confirmPassword: z.string(),
     })
-    .refine((data) => data.newPassword === data.confirmPassword, {
+    .refine((data) => data.password === data.confirmPassword, {
         message: "Passwords don't match",
         path: ["confirmPassword"],
     });
 
-interface ChangePasswordProps {
-    authProviders: {
-        hasCredentialAuth: boolean;
-        hasGoogleAuth: boolean;
-        hasGithubAuth: boolean;
-        providers: string[];
-        canRemoveCredentials: boolean;
-    };
-}
+export function AddCredentials() {
+    const { refetch: refetchProviders } =
+        api.account.getAuthProviders.useQuery();
+    const setPasswordMutation = api.account.setPassword.useMutation();
 
-export function ChangePassword({ authProviders }: ChangePasswordProps) {
-    const passwordForm = useForm<z.infer<typeof passwordChangeSchema>>({
-        resolver: zodResolver(passwordChangeSchema),
+    const form = useForm<z.infer<typeof addCredentialsSchema>>({
+        resolver: zodResolver(addCredentialsSchema),
         defaultValues: {
-            currentPassword: "",
-            newPassword: "",
+            password: "",
             confirmPassword: "",
         },
     });
 
-    // Don't render if user doesn't have credential authentication
-    if (!authProviders.hasCredentialAuth) {
-        return null;
-    }
-
-    const onChangePassword = async (
-        values: z.infer<typeof passwordChangeSchema>,
+    const onAddCredentials = async (
+        values: z.infer<typeof addCredentialsSchema>,
     ) => {
         try {
-            await changePassword({
-                newPassword: values.newPassword,
-                currentPassword: values.currentPassword,
-                revokeOtherSessions: true,
+            await setPasswordMutation.mutateAsync({
+                password: values.password,
             });
-            toast.success("Password changed successfully");
-            passwordForm.reset();
+
+            toast.success("Password authentication added successfully");
+            form.reset();
+            // Refetch providers to update UI
+            await refetchProviders();
         } catch (error: unknown) {
             const message =
                 error instanceof Error
                     ? error.message
-                    : "Failed to change password";
+                    : "Failed to add password authentication";
             toast.error(message);
         }
     };
@@ -92,46 +80,30 @@ export function ChangePassword({ authProviders }: ChangePasswordProps) {
         <Card>
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                    <Lock className="h-5 w-5" />
-                    Password & Security
+                    <UserPlus className="h-5 w-5" />
+                    Add Password Authentication
                 </CardTitle>
                 <CardDescription>
-                    Change your password to keep your account secure.
+                    Set up email and password authentication for your account.
+                    This allows you to sign in without using social providers.
                 </CardDescription>
             </CardHeader>
             <CardContent>
-                <Form {...passwordForm}>
+                <Form {...form}>
                     <form
-                        onSubmit={passwordForm.handleSubmit(onChangePassword)}
+                        onSubmit={form.handleSubmit(onAddCredentials)}
                         className="space-y-4"
                     >
                         <FormField
-                            control={passwordForm.control}
-                            name="currentPassword"
-                            render={({ field }) => (
-                                <FormItem>
-                                    <FormLabel>Current Password</FormLabel>
-                                    <FormControl>
-                                        <Input
-                                            type="password"
-                                            placeholder="Enter current password"
-                                            {...field}
-                                        />
-                                    </FormControl>
-                                    <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={passwordForm.control}
-                            name="newPassword"
+                            control={form.control}
+                            name="password"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>New Password</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="password"
-                                            placeholder="Enter new password"
+                                            placeholder="Enter your password"
                                             {...field}
                                         />
                                     </FormControl>
@@ -144,15 +116,15 @@ export function ChangePassword({ authProviders }: ChangePasswordProps) {
                             )}
                         />
                         <FormField
-                            control={passwordForm.control}
+                            control={form.control}
                             name="confirmPassword"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Confirm New Password</FormLabel>
+                                    <FormLabel>Confirm Password</FormLabel>
                                     <FormControl>
                                         <Input
                                             type="password"
-                                            placeholder="Confirm new password"
+                                            placeholder="Confirm your password"
                                             {...field}
                                         />
                                     </FormControl>
@@ -162,11 +134,15 @@ export function ChangePassword({ authProviders }: ChangePasswordProps) {
                         />
                         <Button
                             type="submit"
-                            disabled={passwordForm.formState.isSubmitting}
+                            disabled={
+                                form.formState.isSubmitting ||
+                                setPasswordMutation.isPending
+                            }
                         >
-                            {passwordForm.formState.isSubmitting
-                                ? "Changing..."
-                                : "Change Password"}
+                            {form.formState.isSubmitting ||
+                            setPasswordMutation.isPending
+                                ? "Setting up..."
+                                : "Add Password Authentication"}
                         </Button>
                     </form>
                 </Form>

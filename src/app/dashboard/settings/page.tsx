@@ -3,24 +3,38 @@
 import React from "react";
 import { User } from "lucide-react";
 import { useSession } from "@/lib/auth/auth-client";
+import { api } from "@/trpc/react";
 import { ActiveSessions } from "./_components/active-sessions";
 import { UserInfo } from "./_components/user-info";
 import { ChangePassword } from "./_components/change-password";
 import { DeleteAccount } from "./_components/delete-account";
+import { AccountLinking } from "./_components/account-linking";
+import { AddCredentials } from "./_components/add-credentials";
+import { RemoveCredentials } from "./_components/remove-credentials";
 
 export default function SettingsPage() {
     const { isPending } = useSession();
+    const { data: authProviders, isLoading: isLoadingProviders } =
+        api.account.getAuthProviders.useQuery();
 
-    // Check if user has email/password authentication by checking if they can change password
-    // This will be true if the user signed up with email/password or set a password
-    const hasEmailPassword = true; // Show password section by default, better-auth will handle validation
-
-    if (isPending) {
+    if (isPending || isLoadingProviders) {
         return (
             <div className="flex min-h-screen items-center justify-center">
                 <div className="text-center">
                     <div className="border-primary mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-b-2"></div>
                     <p className="text-muted-foreground">Loading settings...</p>
+                </div>
+            </div>
+        );
+    }
+
+    if (!authProviders) {
+        return (
+            <div className="flex min-h-screen items-center justify-center">
+                <div className="text-center">
+                    <p className="text-destructive">
+                        Failed to load authentication settings
+                    </p>
                 </div>
             </div>
         );
@@ -35,9 +49,19 @@ export default function SettingsPage() {
 
             <UserInfo />
             <ActiveSessions />
+            <AccountLinking />
 
-            {/* Password Section - Only show if user has email/password account */}
-            {hasEmailPassword && <ChangePassword />}
+            {/* Password Management Section */}
+            {authProviders.hasCredentialAuth ? (
+                // User has password auth - show change password and option to remove
+                <>
+                    <ChangePassword authProviders={authProviders} />
+                    <RemoveCredentials authProviders={authProviders} />
+                </>
+            ) : (
+                // User only has social auth - show option to add password
+                <AddCredentials />
+            )}
 
             <DeleteAccount />
         </div>
