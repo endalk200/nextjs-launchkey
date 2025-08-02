@@ -68,7 +68,7 @@ export default function RootLayout({
             <body className="bg-background text-foreground font-mono antialiased">
                 <ThemeProvider
                     attribute="class"
-                    defaultTheme="dark"
+                    defaultTheme="light"
                     enableSystem
                     disableTransitionOnChange
                     storageKey="nextcelerator-theme"

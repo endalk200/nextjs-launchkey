@@ -1,0 +1,36 @@
+---
+globs: *.ts,*.tsx
+---
+
+# TypeScript Conventions
+
+## Import Style
+
+- Use `type` imports for type-only imports: `import { type Metadata } from "next"`
+- Use inline type imports when possible: `import { type User, createUser } from "./user"`
+- Absolute imports with `@/` prefix for src directory
+
+## Type Definitions
+
+- Use `interface` for object shapes that might be extended
+- Use `type` for unions, primitives, and computed types
+- Export types with descriptive names, often ending in the thing they describe
+
+## Function Signatures
+
+- Use arrow functions for components and simple functions
+- Use function declarations for complex logic that benefits from hoisting
+- Always type function parameters explicitly
+- Let TypeScript infer return types when obvious
+
+## Error Handling
+
+- Use Zod for runtime validation at API boundaries
+- Prefer throwing typed errors over returning error objects
+- Use TypeScript's strict mode features (already enabled)
+
+## Code Organization
+
+- Group imports: external packages, then internal modules, then relative imports
+- Export types and utilities from index files
+- Use `satisfies` operator for type validation without widening
