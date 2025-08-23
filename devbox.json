@@ -1,9 +1,7 @@
 {
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/schemas/devbox.schema.json",
   "packages": [
-    // Node 21 to match local toolchain requested
     "nodejs@21",
-    // pnpm 9.x distributed via corepack shim; also include jq
     "jq"
   ],
   "shell": {
