@@ -20,6 +20,7 @@ beautiful UI components, and developer-first experience.
 - [Development Workflow](#development-workflow)
 - [Scripts](#scripts)
 - [Deployment](#deployment)
+- [Devbox (Reproducible Dev Environment)](#devbox-reproducible-dev-environment)
 - [Contributing](#contributing)
 - [License](#license)
 
@@ -129,8 +130,9 @@ with modern authentication using Better Auth. It provides a solid foundation for
 
 ## Prerequisites
 
-- **Node.js** v21.6.0 or higher
-- **pnpm** v9.12.3 or higher
+- **Node.js** v21.6.0 (local toolchain); Devbox pins Node 21 to match
+- **pnpm** v9.12.3 (pinned via packageManager and corepack)
+- **jq** v1.7.1
 - **PostgreSQL** database (local or cloud)
 - **Git** for version control
 
@@ -537,6 +539,59 @@ pnpm build            # Build for production
 pnpm start            # Start production server
 pnpm preview          # Build and start production server
 ```
+
+## Devbox (Reproducible Dev Environment)
+
+This repo includes Devbox configuration for a fully reproducible local environment.
+
+- Tools provided in Devbox shell:
+    - Node.js 21.x (aligned with local toolchain)
+    - pnpm 9.12.3 (via corepack, read from package.json's packageManager)
+    - jq 1.7.x
+
+### Install Devbox
+
+Follow https://www.jetify.com/devbox/docs/install/ to install Devbox.
+
+### Use Devbox
+
+```bash
+# Start a dev shell with pinned tools
+devbox shell
+
+# Inside the shell, verify versions
+node -v   # expected: v21.x
+pnpm -v   # expected: 9.12.3
+jq --version  # expected: 1.7.x
+
+# Install deps and generate Prisma client (post_create hook also runs this)
+pnpm install --frozen-lockfile
+pnpm prisma generate
+
+# Run the usual workflows
+pnpm dev
+pnpm db:push
+```
+
+### Non-interactive usage
+
+```bash
+devbox run -- pnpm build
+```
+
+Devbox reads `devbox.json` and runs `devbox.d/init.sh` to pin pnpm via corepack using the `packageManager` field.
+
+### What is `devbox.d/`?
+
+`devbox.d/` is a conventional directory for project-specific Devbox scripts and hooks. In this repo:
+
+- `devbox.d/init.sh` runs when a Devbox shell starts. It:
+    - Enables Corepack
+    - Activates the pnpm version from `package.json` (falls back to 9.12.3)
+    - Exports helpful env vars (e.g., `NEXT_TELEMETRY_DISABLED`)
+    - Prints tool versions for visibility
+
+Should it be version tracked? Yes. Commit `devbox.json` and `devbox.d/` so every contributor gets the same environment behavior. Avoid storing secrets or machine-specific paths inside these files.
 
 ## Deployment
 
