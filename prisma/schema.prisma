@@ -30,6 +30,12 @@ model User {
     sessions      Session[]
     accounts      Account[]
 
+    // Admin plugin fields
+    role       String?   @default("user")
+    banned     Boolean?  @default(false)
+    banReason  String?
+    banExpires DateTime?
+
     @@unique([email])
     @@map("user")
 }
@@ -44,6 +50,9 @@ model Session {
     userAgent String?
     userId    String
     user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    // Admin plugin field
+    impersonatedBy String?
 
     @@unique([token])
     @@map("session")

@@ -1,6 +1,7 @@
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { admin as adminPlugin } from "better-auth/plugins";
 import { db } from "@/server/db";
 import { env } from "@/env";
 import {
@@ -137,7 +138,12 @@ export const auth = betterAuth({
             maxAge: 5 * 60, // 5 minutes
         },
     },
-    plugins: [nextCookies()],
+    plugins: [
+        nextCookies(),
+        adminPlugin({
+            adminUserIds: ["VZD9QJYAsPNwthminBLOV1ZYSpIpuyVV"],
+        }),
+    ],
     secret: env.BETTER_AUTH_SECRET,
     baseURL: env.BETTER_AUTH_URL,
     trustedOrigins: ["http://localhost:3000"],

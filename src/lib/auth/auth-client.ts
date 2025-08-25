@@ -1,8 +1,10 @@
 import { createAuthClient } from "better-auth/react";
+import { adminClient } from "better-auth/client/plugins";
 
 export const authClient = createAuthClient({
     baseURL:
         process.env.NODE_ENV === "production" ? "" : "http://localhost:3000",
+    plugins: [adminClient()],
 });
 
 export const {
@@ -22,6 +24,7 @@ export const {
     getSession,
     linkSocial,
     unlinkAccount,
+    admin,
 } = authClient;
 
 export type Session = typeof authClient.$Infer.Session;
