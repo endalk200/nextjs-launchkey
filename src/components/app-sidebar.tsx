@@ -9,6 +9,8 @@ import {
     Shield,
     HomeIcon,
     SettingsIcon,
+    Users,
+    Gauge,
 } from "lucide-react";
 
 import {
@@ -33,8 +35,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 
-// Tactical Ops Menu items
-const items = [
+// Base menu items
+const baseItems = [
     {
         title: "Dashboard",
         url: "/dashboard",
@@ -51,6 +53,29 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     const { data: session } = authClient.useSession();
     const router = useRouter();
     const pathname = usePathname();
+    const [canSeeAdmin, setCanSeeAdmin] = React.useState(false);
+
+    React.useEffect(() => {
+        let mounted = true;
+        // Check permission dynamically so sidebar updates accurately
+        void (async () => {
+            try {
+                if (!session?.user?.id) {
+                    if (mounted) setCanSeeAdmin(false);
+                    return;
+                }
+                const allowed = await authClient.admin.hasPermission({
+                    permissions: { user: ["list"] },
+                });
+                if (mounted) setCanSeeAdmin(Boolean(allowed));
+            } catch {
+                if (mounted) setCanSeeAdmin(false);
+            }
+        })();
+        return () => {
+            mounted = false;
+        };
+    }, [session?.user?.id]);
 
     const handleSignOut = async () => {
         await authClient.signOut({
@@ -64,13 +89,31 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
     // Fixed active state logic
     const isActiveRoute = (itemUrl: string) => {
-        if (itemUrl === "/dashboard") {
-            // Exact match for dashboard root
-            return pathname === "/dashboard";
-        }
-        // For other routes, check if pathname starts with the item URL
-        return pathname.startsWith(itemUrl);
+        // Only mark a parent active if it is an exact match, not when a deeper child path is active.
+        // This prevents both Admin and Users being highlighted on /dashboard/admin/users
+        return pathname === itemUrl;
     };
+
+    // Compute role-based items
+    const roles = String(session?.user?.role ?? "user")
+        .split(",")
+        .map((r) => r.trim());
+    const isAdminRole = roles.includes("admin");
+    const showAdmin = isAdminRole || canSeeAdmin;
+    const items = [
+        ...baseItems,
+        // Admin-only items appended conditionally
+        ...(showAdmin
+            ? [
+                  { title: "Admin", url: "/dashboard/admin", icon: Gauge },
+                  {
+                      title: "Users",
+                      url: "/dashboard/admin/users",
+                      icon: Users,
+                  },
+              ]
+            : []),
+    ] as const;
 
     return (
         <Sidebar

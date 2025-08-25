@@ -10,19 +10,7 @@ export const metadata: Metadata = {
     title: "NextCelerator — modern fully featured NextJs starter kit",
     description:
         "NextCelerator is a modern fully featured NextJs starter kit with shadcn/ui, tailwindcss, typescript, prisma, and more.",
-    keywords: [
-        "NextCelerator",
-        "NextJs",
-        "shadcn/ui",
-        "tailwindcss",
-        "typescript",
-        "prisma",
-        "nextjs starter kit",
-        "shadcn/ui starter kit",
-        "tailwindcss starter kit",
-        "typescript starter kit",
-        "prisma starter kit",
-    ],
+    keywords: ["NextCelerator"],
     authors: [
         {
             name: "Endalkachew Biruk <@endalk200>",
@@ -68,7 +56,7 @@ export default function RootLayout({
             <body className="bg-background text-foreground font-mono antialiased">
                 <ThemeProvider
                     attribute="class"
-                    defaultTheme="light"
+                    defaultTheme="dark"
                     enableSystem
                     disableTransitionOnChange
                     storageKey="nextcelerator-theme"
