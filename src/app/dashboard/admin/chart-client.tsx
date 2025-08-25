@@ -8,15 +8,10 @@ import {
     YAxis,
     CartesianGrid,
     Tooltip,
-    ResponsiveContainer,
-    Legend,
 } from "recharts";
 import {
     ChartContainer,
-    ChartTooltip,
     ChartTooltipContent,
-    ChartLegend,
-    ChartLegendContent,
     type ChartConfig,
 } from "@/components/ui/chart";
 

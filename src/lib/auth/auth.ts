@@ -18,10 +18,10 @@ export const auth = betterAuth({
     emailAndPassword: {
         enabled: true,
         requireEmailVerification: true, // Set to true in production
-        sendResetPassword: async ({ user, url, token }) => {
+        sendResetPassword: async ({ user, url: _url, token }) => {
             try {
-                await sendPasswordResetEmail({ user, url, token });
-            } catch (error) {
+                await sendPasswordResetEmail({ user, url: _url, token });
+            } catch (error: unknown) {
                 console.error("Failed to send password reset email:", error);
                 // In production, you might want to handle this more gracefully
                 // For now, we'll continue execution to not break the auth flow
@@ -45,7 +45,7 @@ export const auth = betterAuth({
                         url,
                         token,
                     });
-                } catch (error) {
+                } catch (error: unknown) {
                     console.error(
                         "Failed to send email change verification:",
                         error,
@@ -66,7 +66,7 @@ export const auth = betterAuth({
                         url: confirmationUrl,
                         token,
                     });
-                } catch (error) {
+                } catch (error: unknown) {
                     console.error(
                         "Failed to send account deletion confirmation:",
                         error,
@@ -108,7 +108,7 @@ export const auth = betterAuth({
         sendVerificationEmail: async ({ user, url, token }) => {
             try {
                 await sendVerificationEmail({ user, url, token });
-            } catch (error) {
+            } catch (error: unknown) {
                 console.error("Failed to send verification email:", error);
                 // In production, you might want to handle this more gracefully
                 // For now, we'll continue execution to not break the auth flow

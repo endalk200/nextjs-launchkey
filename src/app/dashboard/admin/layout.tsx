@@ -21,7 +21,7 @@ export default async function AdminLayout({
         if (!result?.success) {
             redirect("/dashboard");
         }
-    } catch (_) {
+    } catch {
         // If the check fails for any reason, treat as unauthorized
         redirect("/dashboard");
     }

@@ -73,8 +73,8 @@ export function RemoveCredentials({ authProviders }: RemoveCredentialsProps) {
                 </CardTitle>
                 <CardDescription>
                     Remove email and password authentication from your account.
-                    You'll still be able to sign in with your other connected
-                    accounts.
+                    You&apos;ll still be able to sign in with your other
+                    connected accounts.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -85,7 +85,8 @@ export function RemoveCredentials({ authProviders }: RemoveCredentialsProps) {
                                 <Shield className="text-muted-foreground mt-0.5 h-4 w-4" />
                                 <div className="text-sm">
                                     <p className="text-muted-foreground font-medium">
-                                        You'll still be able to sign in with:
+                                        You&apos;ll still be able to sign in
+                                        with:
                                     </p>
                                     <p className="text-muted-foreground">
                                         {otherMethods.join(" and ")}
@@ -135,8 +136,8 @@ export function RemoveCredentials({ authProviders }: RemoveCredentialsProps) {
                     <div className="bg-muted rounded-lg p-4">
                         <p className="text-muted-foreground text-sm">
                             You cannot remove password authentication because
-                            it's your only sign-in method. Link another account
-                            first to enable removal.
+                            it&apos;s your only sign-in method. Link another
+                            account first to enable removal.
                         </p>
                     </div>
                 )}

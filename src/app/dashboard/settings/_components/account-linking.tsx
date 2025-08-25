@@ -107,7 +107,7 @@ export function AccountLinking() {
         }
     };
 
-    const canUnlink = (providerId: string) => {
+    const canUnlink = (_providerId: string) => {
         if (!authProviders) return false;
 
         // Don't allow unlinking if it's the only authentication method
