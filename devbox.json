@@ -2,27 +2,30 @@
   "$schema": "https://raw.githubusercontent.com/jetify-com/devbox/main/schemas/devbox.schema.json",
   "packages": [
     "nodejs@21",
-    "jq"
+    "jq",
+    "syft@latest",
+    "grype@latest",
+    "gitleaks@latest",
   ],
   "shell": {
     "init_hook": [
       // Enable corepack and pin pnpm version from package.json
       "corepack enable >/dev/null 2>&1 || true",
-      "if command -v jq >/dev/null 2>&1 && [ -f package.json ]; then PNPM_VERSION=$(jq -r '.packageManager | capture("(?<name>[^@]+)@(?<ver>.+)").ver' package.json 2>/dev/null); fi;",
+      "if command -v jq >/dev/null 2>&1 && [ -f package.json ]; then PNPM_VERSION=$(jq -r '.packageManager | capture('(?<name>[^@]+)@(?<ver>.+)').ver' package.json 2>/dev/null); fi;",
       // Fallback if jq missing or parse failed
       "if [ -z \"$PNPM_VERSION\" ]; then PNPM_VERSION=9.12.3; fi",
       "corepack prepare pnpm@$PNPM_VERSION --activate",
       // Helpful envs
       "export NEXT_TELEMETRY_DISABLED=1",
-      "export PRISMA_GENERATE_SKIP_ENV_VALIDATION=1"
+      "export PRISMA_GENERATE_SKIP_ENV_VALIDATION=1",
     ],
     "scripts": {
       "post_create": [
         // Install deps using the pinned pnpm
         "if [ -f pnpm-lock.yaml ]; then pnpm install --frozen-lockfile; fi",
         // Generate prisma client after install
-        "if command -v pnpm >/dev/null 2>&1; then pnpm prisma generate || true; fi"
-      ]
-    }
-  }
+        "if command -v pnpm >/dev/null 2>&1; then pnpm prisma generate || true; fi",
+      ],
+    },
+  },
 }
