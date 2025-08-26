@@ -1,6 +1,9 @@
-import { Resend } from "resend";
+import { Resend, type CreateEmailResponseSuccess } from "resend";
 import { render } from "@react-email/components";
 import { env } from "@/env";
+import type { Result } from "neverthrow";
+import { ok, err } from "neverthrow";
+import { safeAwait } from "@/lib/utils/safe-await";
 
 // Import email templates
 import { VerifyEmail, type VerifyEmailProps } from "@/emails/verify-email";
@@ -16,22 +19,36 @@ import {
     DeleteAccountConfirmation,
     type DeleteAccountConfirmationProps,
 } from "@/emails/delete-account-confirmation";
+import {
+    AdminPromotion,
+    type AdminPromotionProps,
+} from "@/emails/admin-promotion";
 
-// Initialize Resend client
 const resend = new Resend(env.RESEND_API_KEY ?? "");
 
-// Email service functions
+export type EmailServiceError =
+    | { type: "INVALID_RESEND_API_KEY"; message: string }
+    | { type: "INVALID_EMAIL"; message: string }
+    | { type: "RATE_LIMITED"; message: string; retryAfter?: number }
+    | { type: "PERMANENT_FAILURE"; message: string }
+    | { type: "TEMPORARY_FAILURE"; message: string }
+    | { type: "UNKNOWN_ERROR"; message: string };
+
+type SendVerificationEmailArgs = {
+    user: { email: string; name?: string };
+    url: string;
+    token: string;
+};
+
 export async function sendVerificationEmail({
     user,
     url,
     token: _token,
-}: {
-    user: { email: string; name?: string };
-    url: string;
-    token: string;
-}) {
-    try {
-        const { data, error } = await resend.emails.send({
+}: SendVerificationEmailArgs): Promise<
+    Result<CreateEmailResponseSuccess, EmailServiceError>
+> {
+    const [response, error] = await safeAwait(
+        resend.emails.send({
             from: "NextCelerator <support@support.endalk200.com>",
             to: [user.email],
             subject: "Verify your email address",
@@ -39,37 +56,78 @@ export async function sendVerificationEmail({
                 username: user.name ?? user.email,
                 verificationUrl: url,
             }),
-        });
+        }),
+    );
 
-        if (error) {
-            console.error("Failed to send verification email:", error);
-            throw new Error(
-                `Failed to send verification email: ${error.message ?? "Unknown error"}`,
-            );
-        }
-
-        console.log("Verification email sent successfully:", {
-            emailId: data?.id,
-            recipient: user.email,
+    if (error) {
+        console.log(
+            `[sendVerificationEmail] Failed to send verification email:`,
+            error,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send verification email, please try again later`,
         });
-        return data;
-    } catch (error) {
-        console.error("Error sending verification email:", error);
-        throw error;
     }
+
+    if (response.error) {
+        switch (response.error.name) {
+            case "rate_limit_exceeded":
+                console.log(
+                    `[sendVerificationEmail] rate_limited error: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "RATE_LIMITED",
+                    message: `Failed to send verification email, please try again later`,
+                });
+            default:
+                console.error(
+                    `[sendVerificationEmail] Failed to send verification email: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "UNKNOWN_ERROR",
+                    message: `Failed to send verification email, please try again later`,
+                });
+        }
+    }
+
+    if (!response.data) {
+        console.error(
+            `[sendVerificationEmail] Failed to send verication email, no response data:`,
+            response,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send verification email, please try again later`,
+        });
+    }
+
+    console.log(
+        `[sendVerificationEmail] Verification email sent successfully: ${response.data?.id}`,
+        {
+            emailId: response.data?.id,
+            recipient: user.email,
+        },
+    );
+
+    return ok(response.data);
 }
+
+type SendPasswordResetEmailArgs = {
+    user: { email: string; name?: string };
+    url: string;
+    token: string;
+};
 
 export async function sendPasswordResetEmail({
     user,
     url,
     token: _token,
-}: {
-    user: { email: string; name?: string };
-    url: string;
-    token: string;
-}) {
-    try {
-        const { data, error } = await resend.emails.send({
+}: SendPasswordResetEmailArgs): Promise<
+    Result<CreateEmailResponseSuccess, EmailServiceError>
+> {
+    const [response, error] = await safeAwait(
+        resend.emails.send({
             from: "NextCelerator <support@support.endalk200.com>",
             to: [user.email],
             subject: "Reset your password",
@@ -77,79 +135,161 @@ export async function sendPasswordResetEmail({
                 username: user.name ?? user.email,
                 resetUrl: url,
             }),
-        });
+        }),
+    );
 
-        if (error) {
-            console.error("Failed to send password reset email:", error);
-            throw new Error(
-                `Failed to send password reset email: ${error.message ?? "Unknown error"}`,
-            );
-        }
-
-        console.log("Password reset email sent successfully:", {
-            emailId: data?.id,
-            recipient: user.email,
+    if (error) {
+        console.log(
+            `[sendPasswordResetEmail] Failed to send password reset email:`,
+            error,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send password reset email, please try again later`,
         });
-        return data;
-    } catch (error) {
-        console.error("Error sending password reset email:", error);
-        throw error;
     }
+
+    if (response.error) {
+        switch (response.error.name) {
+            case "rate_limit_exceeded":
+                console.log(
+                    `[sendPasswordResetEmail] rate_limited error: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "RATE_LIMITED",
+                    message: `Failed to send password reset email, please try again later`,
+                });
+            default:
+                console.error(
+                    `[sendPasswordResetEmail] Failed to send password reset email: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "UNKNOWN_ERROR",
+                    message: `Failed to send password reset email, please try again later`,
+                });
+        }
+    }
+
+    if (!response.data) {
+        console.error(
+            `[sendPasswordResetEmail] Failed to send password reset email, no response data:`,
+            response,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send password reset email, please try again later`,
+        });
+    }
+
+    console.log(
+        `[sendPasswordResetEmail] Password reset email sent successfully: ${response.data?.id}`,
+        {
+            emailId: response.data?.id,
+            recipient: user.email,
+        },
+    );
+
+    return ok(response.data);
 }
+
+type SendChangeEmailVerificationArgs = {
+    user: { email: string; name?: string };
+    newEmail: string;
+    url: string;
+    token: string;
+};
 
 export async function sendChangeEmailVerification({
     user,
     newEmail,
     url,
     token: _token,
-}: {
-    user: { email: string; name?: string };
-    newEmail: string;
-    url: string;
-    token: string;
-}) {
-    try {
-        const { data, error } = await resend.emails.send({
+}: SendChangeEmailVerificationArgs): Promise<
+    Result<CreateEmailResponseSuccess, EmailServiceError>
+> {
+    const [response, error] = await safeAwait(
+        resend.emails.send({
             from: "NextCelerator <support@support.endalk200.com>",
-            to: [newEmail], // Send to the new email address
+            to: [newEmail],
             subject: "Verify your new email address",
             react: ChangeEmailVerification({
                 username: user.name ?? user.email,
                 newEmail,
                 verificationUrl: url,
             }),
+        }),
+    );
+
+    if (error) {
+        console.log(
+            `[sendChangeEmailVerification] Failed to send email change verification:`,
+            error,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send email change verification, please try again later`,
         });
+    }
 
-        if (error) {
-            console.error("Failed to send email change verification:", error);
-            throw new Error(
-                `Failed to send email change verification: ${error.message ?? "Unknown error"}`,
-            );
+    if (response.error) {
+        switch (response.error.name) {
+            case "rate_limit_exceeded":
+                console.log(
+                    `[sendChangeEmailVerification] rate_limited error: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "RATE_LIMITED",
+                    message: `Failed to send email change verification, please try again later`,
+                });
+            default:
+                console.error(
+                    `[sendChangeEmailVerification] Failed to send email change verification: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "UNKNOWN_ERROR",
+                    message: `Failed to send email change verification, please try again later`,
+                });
         }
+    }
 
-        console.log("Email change verification sent successfully:", {
-            emailId: data?.id,
+    if (!response.data) {
+        console.error(
+            `[sendChangeEmailVerification] Failed to send email change verification, no response data:`,
+            response,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send email change verification, please try again later`,
+        });
+    }
+
+    console.log(
+        `[sendChangeEmailVerification] Email change verification sent successfully: ${response.data?.id}`,
+        {
+            emailId: response.data?.id,
             newEmail,
             originalEmail: user.email,
-        });
-        return data;
-    } catch (error) {
-        console.error("Error sending email change verification:", error);
-        throw error;
-    }
+        },
+    );
+
+    return ok(response.data);
 }
+
+type SendDeleteAccountConfirmationArgs = {
+    user: { email: string; name?: string };
+    url: string;
+    token: string;
+};
 
 export async function sendDeleteAccountConfirmation({
     user,
     url,
     token: _token,
-}: {
-    user: { email: string; name?: string };
-    url: string;
-    token: string;
-}) {
-    try {
-        const { data, error } = await resend.emails.send({
+}: SendDeleteAccountConfirmationArgs): Promise<
+    Result<CreateEmailResponseSuccess, EmailServiceError>
+> {
+    const [response, error] = await safeAwait(
+        resend.emails.send({
             from: "NextCelerator <support@support.endalk200.com>",
             to: [user.email],
             subject: "⚠️ Confirm Account Deletion",
@@ -157,27 +297,138 @@ export async function sendDeleteAccountConfirmation({
                 username: user.name ?? user.email,
                 confirmationUrl: url,
             }),
-        });
+        }),
+    );
 
-        if (error) {
-            console.error(
-                "Failed to send account deletion confirmation:",
-                error,
-            );
-            throw new Error(
-                `Failed to send account deletion confirmation: ${error.message ?? "Unknown error"}`,
-            );
-        }
-
-        console.log("Account deletion confirmation sent successfully:", {
-            emailId: data?.id,
-            recipient: user.email,
+    if (error) {
+        console.log(
+            `[sendDeleteAccountConfirmation] Failed to send account deletion confirmation:`,
+            error,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send account deletion confirmation, please try again later`,
         });
-        return data;
-    } catch (error) {
-        console.error("Error sending account deletion confirmation:", error);
-        throw error;
     }
+
+    if (response.error) {
+        switch (response.error.name) {
+            case "rate_limit_exceeded":
+                console.log(
+                    `[sendDeleteAccountConfirmation] rate_limited error: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "RATE_LIMITED",
+                    message: `Failed to send account deletion confirmation, please try again later`,
+                });
+            default:
+                console.error(
+                    `[sendDeleteAccountConfirmation] Failed to send account deletion confirmation: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "UNKNOWN_ERROR",
+                    message: `Failed to send account deletion confirmation, please try again later`,
+                });
+        }
+    }
+
+    if (!response.data) {
+        console.error(
+            `[sendDeleteAccountConfirmation] Failed to send account deletion confirmation, no response data:`,
+            response,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send account deletion confirmation, please try again later`,
+        });
+    }
+
+    console.log(
+        `[sendDeleteAccountConfirmation] Account deletion confirmation sent successfully: ${response.data?.id}`,
+        {
+            emailId: response.data?.id,
+            recipient: user.email,
+        },
+    );
+
+    return ok(response.data);
+}
+
+type SendAdminPromotionEmailArgs = {
+    user: { email: string; name?: string };
+    adminUrl: string;
+};
+
+export async function sendAdminPromotionEmail({
+    user,
+    adminUrl,
+}: SendAdminPromotionEmailArgs): Promise<
+    Result<CreateEmailResponseSuccess, EmailServiceError>
+> {
+    const [response, error] = await safeAwait(
+        resend.emails.send({
+            from: "NextCelerator <support@support.endalk200.com>",
+            to: [user.email],
+            subject: "You're now an admin on NextCelerator",
+            react: AdminPromotion({
+                username: user.name ?? user.email,
+                adminUrl,
+            }),
+        }),
+    );
+
+    if (error) {
+        console.log(
+            `[sendAdminPromotionEmail] Failed to send admin promotion email:`,
+            error,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send admin promotion email, please try again later`,
+        });
+    }
+
+    if (response.error) {
+        switch (response.error.name) {
+            case "rate_limit_exceeded":
+                console.log(
+                    `[sendAdminPromotionEmail] rate_limited error: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "RATE_LIMITED",
+                    message: `Failed to send admin promotion email, please try again later`,
+                });
+            default:
+                console.error(
+                    `[sendAdminPromotionEmail] Failed to send admin promotion email: ${response.error.name}: ${response.error.message}`,
+                );
+                return err({
+                    type: "UNKNOWN_ERROR",
+                    message: `Failed to send admin promotion email, please try again later`,
+                });
+        }
+    }
+
+    if (!response.data) {
+        console.error(
+            `[sendAdminPromotionEmail] Failed to send admin promotion email, no response data:`,
+            response,
+        );
+        return err({
+            type: "UNKNOWN_ERROR",
+            message: `Failed to send admin promotion email, please try again later`,
+        });
+    }
+
+    console.log(
+        `[sendAdminPromotionEmail] Admin promotion email sent successfully: ${response.data?.id}`,
+        {
+            emailId: response.data?.id,
+            recipient: user.email,
+        },
+    );
+
+    return ok(response.data);
 }
 
 // Helper function to render email to HTML (useful for testing)
@@ -198,12 +449,18 @@ export async function renderEmailToHtml(
     props: DeleteAccountConfirmationProps,
 ): Promise<string>;
 export async function renderEmailToHtml(
-    template: "verify" | "reset" | "change-email" | "delete-account",
+    template:
+        | "verify"
+        | "reset"
+        | "change-email"
+        | "delete-account"
+        | "admin-promotion",
     props:
         | VerifyEmailProps
         | ResetPasswordProps
         | ChangeEmailVerificationProps
-        | DeleteAccountConfirmationProps,
+        | DeleteAccountConfirmationProps
+        | AdminPromotionProps,
 ): Promise<string> {
     switch (template) {
         case "verify":
@@ -220,6 +477,8 @@ export async function renderEmailToHtml(
                     props as DeleteAccountConfirmationProps,
                 ),
             );
+        case "admin-promotion":
+            return await render(AdminPromotion(props as AdminPromotionProps));
         default:
             throw new Error(`Unknown email template: ${template as string}`);
     }

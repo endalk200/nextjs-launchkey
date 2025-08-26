@@ -1,4 +1,7 @@
 import { auth } from "@/lib/auth";
+import { db } from "@/server/db";
+import { env } from "@/env";
+import { sendAdminPromotionEmail } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import UsersControls from "./users-controls";
@@ -467,6 +470,23 @@ async function toggleAdmin(formData: FormData) {
         body: { userId, role: nextRoles },
         headers: await headers(),
     });
+    // Only notify on promotion
+    if (!hasAdmin) {
+        try {
+            const user = await db.user.findUnique({
+                where: { id: userId },
+                select: { email: true, name: true },
+            });
+            if (user?.email) {
+                await sendAdminPromotionEmail({
+                    user: { email: user.email, name: user.name ?? undefined },
+                    adminUrl: `${env.BETTER_AUTH_URL}/dashboard/admin`,
+                });
+            }
+        } catch (error) {
+            console.error("Failed to send admin promotion email:", error);
+        }
+    }
     revalidatePath("/dashboard/admin/users");
 }
 

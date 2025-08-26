@@ -9,6 +9,10 @@ export {
   DeleteAccountConfirmation,
   type DeleteAccountConfirmationProps,
 } from "./delete-account-confirmation";
+export {
+  AdminPromotion,
+  type AdminPromotionProps,
+} from "./admin-promotion";
 
 // Email components
 export { EmailLayout } from "./components/email-layout";
