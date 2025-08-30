@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import {
     Card,
@@ -26,7 +26,7 @@ import { Badge } from "@/components/ui/badge";
 import {
     AlertTriangle,
     Trash2,
-    CheckCircle,
+    // CheckCircle,
     XCircle,
     Loader2,
     ArrowLeft,
@@ -36,7 +36,7 @@ import Link from "next/link";
 
 export default function DeleteAccountPage() {
     const searchParams = useSearchParams();
-    const router = useRouter();
+    // const router = useRouter();
     const { data: session } = useSession();
     const [token, setToken] = useState<string | null>(null);
     const [isDeleting, setIsDeleting] = useState(false);
