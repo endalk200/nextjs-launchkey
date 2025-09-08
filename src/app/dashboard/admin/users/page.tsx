@@ -1,28 +1,14 @@
 import { auth } from "@/lib/auth";
-import { db } from "@/server/db";
-import { env } from "@/env";
-import { sendAdminPromotionEmail } from "@/lib/email";
 import { revalidatePath } from "next/cache";
 import { headers } from "next/headers";
 import UsersControls from "./users-controls";
-import ConfirmFormAction from "./confirm-form-action";
-import { Badge } from "@/components/ui/badge";
-import { cn } from "@/lib/utils/client";
-
-type AdminUser = {
-    id: string;
-    email: string;
-    name?: string | null;
-    role?: string | null;
-    banned?: boolean | null;
-    emailVerified?: boolean | null;
-    createdAt?: string | Date | null;
-};
+import { UsersDataTable } from "./users-data-table";
+import { type AdminUser } from "./columns";
 
 export default async function AdminUsersPage({
-    searchParams,
+    searchParams: searchParamsPromise,
 }: {
-    searchParams: {
+    searchParams: Promise<{
         page?: string;
         q?: string;
         role?: string;
@@ -30,8 +16,9 @@ export default async function AdminUsersPage({
         verified?: string;
         sortBy?: string;
         sortDirection?: "asc" | "desc";
-    };
+    }>;
 }) {
+    const searchParams = await searchParamsPromise;
     const page = Number(searchParams?.page ?? 1);
     const limit = 20;
     const offset = (page - 1) * limit;
@@ -111,220 +98,12 @@ export default async function AdminUsersPage({
                 <h1 className="text-xl font-semibold tracking-tight">Users</h1>
             </div>
             <UsersControls />
-            <div className="overflow-x-auto rounded-md border">
-                <table className="min-w-full text-sm">
-                    <thead className="bg-muted/50">
-                        <tr>
-                            <ThSortable
-                                label="Email"
-                                columnKey="email"
-                                activeKey={sortBy}
-                                direction={sortDirection}
-                                baseParams={{
-                                    q: q ?? undefined,
-                                    role: role ?? undefined,
-                                    banned:
-                                        typeof banned === "boolean"
-                                            ? String(banned)
-                                            : undefined,
-                                    verified:
-                                        typeof emailVerified === "boolean"
-                                            ? String(emailVerified)
-                                            : undefined,
-                                }}
-                            />
-                            <ThSortable
-                                label="Name"
-                                columnKey="name"
-                                activeKey={sortBy}
-                                direction={sortDirection}
-                                baseParams={{
-                                    q: q ?? undefined,
-                                    role: role ?? undefined,
-                                    banned:
-                                        typeof banned === "boolean"
-                                            ? String(banned)
-                                            : undefined,
-                                    verified:
-                                        typeof emailVerified === "boolean"
-                                            ? String(emailVerified)
-                                            : undefined,
-                                }}
-                            />
-                            <Th>Role</Th>
-                            <ThSortable
-                                label="Verified"
-                                columnKey="emailVerified"
-                                activeKey={sortBy}
-                                direction={sortDirection}
-                                baseParams={{
-                                    q: q ?? undefined,
-                                    role: role ?? undefined,
-                                    banned:
-                                        typeof banned === "boolean"
-                                            ? String(banned)
-                                            : undefined,
-                                    verified:
-                                        typeof emailVerified === "boolean"
-                                            ? String(emailVerified)
-                                            : undefined,
-                                }}
-                            />
-                            <ThSortable
-                                label="Created"
-                                columnKey="createdAt"
-                                activeKey={sortBy}
-                                direction={sortDirection}
-                                baseParams={{
-                                    q: q ?? undefined,
-                                    role: role ?? undefined,
-                                    banned:
-                                        typeof banned === "boolean"
-                                            ? String(banned)
-                                            : undefined,
-                                    verified:
-                                        typeof emailVerified === "boolean"
-                                            ? String(emailVerified)
-                                            : undefined,
-                                }}
-                            />
-                            <Th>Actions</Th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {displayUsers.map((u: AdminUser) => (
-                            <tr key={u.id} className="border-t">
-                                <Td>{u.email}</Td>
-                                <Td>{u.name}</Td>
-                                <Td>{u.role ?? "user"}</Td>
-                                <Td>
-                                    {u.emailVerified ? (
-                                        <Badge variant="secondary">
-                                            Verified
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="outline">
-                                            Unverified
-                                        </Badge>
-                                    )}
-                                </Td>
-                                <Td>
-                                    {new Date(
-                                        u.createdAt ?? Date.now(),
-                                    ).toLocaleString()}
-                                </Td>
-                                <Td>
-                                    <div className="flex flex-wrap gap-2 py-2">
-                                        <ConfirmFormAction
-                                            action={banUser}
-                                            label={u.banned ? "Unban" : "Ban"}
-                                            payload={{
-                                                userId: u.id,
-                                                banned: String(
-                                                    Boolean(u.banned),
-                                                ),
-                                            }}
-                                            title={
-                                                u.banned
-                                                    ? "Unban user?"
-                                                    : "Ban user?"
-                                            }
-                                            description={
-                                                u.banned
-                                                    ? "This will lift the ban and allow the user to sign in."
-                                                    : "This will ban the user and prevent sign in."
-                                            }
-                                            confirmLabel={
-                                                u.banned ? "Unban" : "Ban"
-                                            }
-                                            variant={
-                                                u.banned
-                                                    ? "secondary"
-                                                    : "outline"
-                                            }
-                                            confirmVariant={
-                                                u.banned
-                                                    ? "secondary"
-                                                    : "destructive"
-                                            }
-                                            size="sm"
-                                        />
-                                        <ConfirmFormAction
-                                            action={impersonate}
-                                            label="Impersonate"
-                                            payload={{ userId: u.id }}
-                                            title="Impersonate user?"
-                                            description="Your session will switch to this user until you sign out."
-                                            confirmLabel="Impersonate"
-                                            variant="outline"
-                                            confirmVariant="secondary"
-                                            size="sm"
-                                        />
-                                        <ConfirmFormAction
-                                            action={toggleAdmin}
-                                            label={
-                                                String(u.role ?? "user")
-                                                    .split(",")
-                                                    .includes("admin")
-                                                    ? "Demote"
-                                                    : "Promote"
-                                            }
-                                            payload={{
-                                                userId: u.id,
-                                                role: String(u.role ?? "user"),
-                                            }}
-                                            title={
-                                                String(u.role ?? "user")
-                                                    .split(",")
-                                                    .includes("admin")
-                                                    ? "Demote from admin?"
-                                                    : "Promote to admin?"
-                                            }
-                                            description={
-                                                String(u.role ?? "user")
-                                                    .split(",")
-                                                    .includes("admin")
-                                                    ? "The user will lose admin privileges."
-                                                    : "The user will gain admin privileges."
-                                            }
-                                            confirmLabel={
-                                                String(u.role ?? "user")
-                                                    .split(",")
-                                                    .includes("admin")
-                                                    ? "Demote"
-                                                    : "Promote"
-                                            }
-                                            variant="outline"
-                                            confirmVariant={
-                                                String(u.role ?? "user")
-                                                    .split(",")
-                                                    .includes("admin")
-                                                    ? "secondary"
-                                                    : "secondary"
-                                            }
-                                            size="sm"
-                                        />
-                                        <ConfirmFormAction
-                                            action={removeUser}
-                                            label="Delete"
-                                            payload={{ userId: u.id }}
-                                            title="Delete user?"
-                                            description="This will permanently delete the user and their sessions."
-                                            confirmLabel="Delete"
-                                            variant="outline"
-                                            confirmVariant="destructive"
-                                            size="sm"
-                                        />
-                                    </div>
-                                </Td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
-            </div>
-            <Pagination
+            <UsersDataTable
+                data={displayUsers}
                 page={page}
                 totalPages={totalPages}
+                pageSize={limit}
+                totalItems={total}
                 baseParams={{
                     q: q ?? undefined,
                     role: role ?? undefined,
@@ -339,93 +118,12 @@ export default async function AdminUsersPage({
                     sortBy,
                     sortDirection,
                 }}
+                actions={{
+                    banUser,
+                    toggleAdmin,
+                    removeUser,
+                }}
             />
-        </div>
-    );
-}
-
-function Th({ children }: { children: React.ReactNode }) {
-    return (
-        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider uppercase">
-            {children}
-        </th>
-    );
-}
-
-function ThSortable({
-    label,
-    columnKey,
-    activeKey,
-    direction,
-    baseParams = {},
-}: {
-    label: string;
-    columnKey: "createdAt" | "email" | "name" | "emailVerified";
-    activeKey: string;
-    direction: "asc" | "desc";
-    baseParams?: Record<string, string | undefined>;
-}) {
-    const isActive = activeKey === columnKey;
-    const nextDirection = isActive && direction === "asc" ? "desc" : "asc";
-    const params = new URLSearchParams();
-    Object.entries(baseParams).forEach(([k, v]) => {
-        if (v) params.set(k, v);
-    });
-    params.set("sortBy", columnKey);
-    params.set("sortDirection", nextDirection);
-    params.delete("page");
-    return (
-        <th className="px-3 py-2 text-left text-xs font-medium tracking-wider uppercase">
-            <a
-                href={`?${params.toString()}`}
-                className={cn(
-                    "inline-flex items-center gap-1 hover:underline",
-                    isActive && "text-foreground",
-                )}
-            >
-                {label}
-                <span className="text-muted-foreground">
-                    {isActive ? (direction === "asc" ? "▲" : "▼") : ""}
-                </span>
-            </a>
-        </th>
-    );
-}
-
-function Td({ children }: { children: React.ReactNode }) {
-    return <td className="px-3 py-2 align-middle">{children}</td>;
-}
-
-function Pagination({
-    page,
-    totalPages,
-    baseParams = {},
-}: {
-    page: number;
-    totalPages: number;
-    baseParams?: Record<string, string | undefined>;
-}) {
-    const prev = Math.max(1, page - 1);
-    const next = Math.min(totalPages, page + 1);
-    const makeHref = (p: number) => {
-        const params = new URLSearchParams();
-        Object.entries(baseParams).forEach(([k, v]) => {
-            if (v) params.set(k, v);
-        });
-        params.set("page", String(p));
-        return `?${params.toString()}`;
-    };
-    return (
-        <div className="flex items-center justify-between">
-            <a className="text-sm underline" href={makeHref(prev)}>
-                Previous
-            </a>
-            <div className="text-sm">
-                Page {page} of {totalPages}
-            </div>
-            <a className="text-sm underline" href={makeHref(next)}>
-                Next
-            </a>
         </div>
     );
 }
@@ -445,16 +143,6 @@ async function banUser(formData: FormData) {
     revalidatePath("/dashboard/admin/users");
 }
 
-async function impersonate(formData: FormData) {
-    "use server";
-    const userId = (formData.get("userId") as string) ?? "";
-    await auth.api.impersonateUser({
-        body: { userId },
-        headers: await headers(),
-    });
-    // stays on page; session switches to impersonated user
-}
-
 async function toggleAdmin(formData: FormData) {
     "use server";
     const userId = (formData.get("userId") as string) ?? "";
@@ -470,23 +158,7 @@ async function toggleAdmin(formData: FormData) {
         body: { userId, role: nextRoles },
         headers: await headers(),
     });
-    // Only notify on promotion
-    if (!hasAdmin) {
-        try {
-            const user = await db.user.findUnique({
-                where: { id: userId },
-                select: { email: true, name: true },
-            });
-            if (user?.email) {
-                await sendAdminPromotionEmail({
-                    user: { email: user.email, name: user.name ?? undefined },
-                    adminUrl: `${env.BETTER_AUTH_URL}/dashboard/admin`,
-                });
-            }
-        } catch (error) {
-            console.error("Failed to send admin promotion email:", error);
-        }
-    }
+    // Note: Could add admin promotion email notification here if needed
     revalidatePath("/dashboard/admin/users");
 }
 
@@ -496,5 +168,3 @@ async function removeUser(formData: FormData) {
     await auth.api.removeUser({ body: { userId }, headers: await headers() });
     revalidatePath("/dashboard/admin/users");
 }
-
-// FormAction removed in favor of ConfirmFormAction

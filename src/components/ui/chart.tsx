@@ -71,6 +71,7 @@ function ChartContainer({
 
 const ChartStyle = ({ id, config }: { id: string; config: ChartConfig }) => {
     const colorConfig = Object.entries(config).filter(
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing
         ([, config]) => config.theme || config.color,
     );
 
@@ -138,6 +139,7 @@ function ChartTooltipContent({
         const itemConfig = getPayloadConfigFromPayload(config, item, key);
         const value =
             !labelKey && typeof label === "string"
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion
                 ? (config[label as keyof typeof config]?.label ?? label)
                 : itemConfig?.label;
 
@@ -186,7 +188,9 @@ function ChartTooltipContent({
                         item,
                         key,
                     );
+                    // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                     const indicatorColor =
+                        // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
                         color ?? item.payload?.fill ?? item.color;
 
                     return (
@@ -205,6 +209,7 @@ function ChartTooltipContent({
                                     item.name,
                                     item,
                                     index,
+                                    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
                                     item.payload,
                                 )
                             ) : (
@@ -233,8 +238,10 @@ function ChartTooltipContent({
                                                 )}
                                                 style={
                                                     {
+                                                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                                                         "--color-bg":
                                                             indicatorColor,
+                                                        // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
                                                         "--color-border":
                                                             indicatorColor,
                                                     } as React.CSSProperties
@@ -253,6 +260,7 @@ function ChartTooltipContent({
                                         <div className="grid gap-1.5">
                                             {nestLabel ? tooltipLabel : null}
                                             <span className="text-muted-foreground">
+                                                {/* eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing */}
                                                 {itemConfig?.label || item.name}
                                             </span>
                                         </div>
@@ -302,6 +310,7 @@ function ChartLegendContent({
             )}
         >
             {payload.map((item) => {
+                // eslint-disable-next-line @typescript-eslint/restrict-template-expressions
                 const key = `${nameKey ?? item.dataKey ?? "value"}`;
                 const itemConfig = getPayloadConfigFromPayload(
                     config,
@@ -311,7 +320,10 @@ function ChartLegendContent({
 
                 return (
                     <div
-                        key={item.value}
+                        key={
+                            // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+                            item.value
+                        }
                         className={cn(
                             "[&>svg]:text-muted-foreground flex items-center gap-1.5 [&>svg]:h-3 [&>svg]:w-3",
                         )}
@@ -370,7 +382,7 @@ function getPayloadConfigFromPayload(
 
     return configLabelKey in config
         ? config[configLabelKey]
-        : config[key as keyof typeof config];
+        : config[key as keyof typeof config]; // eslint-disable-line @typescript-eslint/no-unnecessary-type-assertion
 }
 
 export {

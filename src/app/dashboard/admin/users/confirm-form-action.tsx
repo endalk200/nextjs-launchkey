@@ -17,7 +17,7 @@ import { cn } from "@/lib/utils/client";
 
 type ConfirmFormActionProps = {
     action: (formData: FormData) => Promise<void>;
-    label: string;
+    label: string | React.ReactNode;
     payload: Record<string, string>;
     title?: string;
     description?: string;
