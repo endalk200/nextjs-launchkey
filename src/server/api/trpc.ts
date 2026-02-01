@@ -6,12 +6,13 @@
  * TL;DR - This is where all the tRPC server stuff is created and plugged in. The pieces you will
  * need to use are documented accordingly near the end.
  */
+
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
 
+import { auth } from "@/server/better-auth";
 import { db } from "@/server/db";
-import { auth } from "@/lib/auth";
 
 /**
  * 1. CONTEXT
@@ -26,11 +27,9 @@ import { auth } from "@/lib/auth";
  * @see https://trpc.io/docs/server/context
  */
 export const createTRPCContext = async (opts: { headers: Headers }) => {
-  // Get the session from Better Auth
   const session = await auth.api.getSession({
     headers: opts.headers,
   });
-
   return {
     db,
     session,
@@ -81,47 +80,41 @@ export const createCallerFactory = t.createCallerFactory;
 export const createTRPCRouter = t.router;
 
 /**
- * Middleware for timing procedure execution and adding an artificial delay in development.
- *
- * You can remove this if you don't like it, but it can help catch unwanted waterfalls by simulating
- * network latency that would occur in production but not in local development.
+ * Middleware for lightweight tRPC timing and logging.
  */
-const timingMiddleware = t.middleware(async ({ next, path }) => {
+const tracingMiddleware = t.middleware(async ({ next, path, type, ctx }) => {
   const start = Date.now();
+  const userId = ctx.session?.user?.id;
 
   if (t._config.isDev) {
-    // artificial delay in dev
     const waitMs = Math.floor(Math.random() * 400) + 100;
     await new Promise((resolve) => setTimeout(resolve, waitMs));
   }
 
-  const result = await next();
-
-  const end = Date.now();
-  console.log(`[TRPC] ${path} took ${end - start}ms to execute`);
-
-  return result;
-});
-
-/**
- * Authentication middleware that ensures the user is authenticated.
- * If not authenticated, throws an UNAUTHORIZED error.
- */
-const authMiddleware = t.middleware(({ ctx, next }) => {
-  if (!ctx.session?.user) {
-    throw new TRPCError({
-      code: "UNAUTHORIZED",
-      message: "You must be logged in to access this resource",
+  try {
+    const result = await next();
+    const duration = Date.now() - start;
+    console.info(`[tRPC] ${type} ${path} completed in ${duration}ms`, {
+      procedure: path,
+      type,
+      duration_ms: duration,
+      status: "success",
+      user_id: userId,
     });
+    return result;
+  } catch (error) {
+    const duration = Date.now() - start;
+    const errorType =
+      error instanceof TRPCError ? error.code : "INTERNAL_SERVER_ERROR";
+    console.error(`[tRPC] ${type} ${path} failed in ${duration}ms`, {
+      procedure: path,
+      type,
+      duration_ms: duration,
+      error_type: errorType,
+      user_id: userId,
+    });
+    throw error;
   }
-
-  return next({
-    ctx: {
-      // Infers that `session` is non-nullable
-      session: ctx.session,
-      user: ctx.session.user,
-    },
-  });
 });
 
 /**
@@ -131,7 +124,7 @@ const authMiddleware = t.middleware(({ ctx, next }) => {
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
-export const publicProcedure = t.procedure.use(timingMiddleware);
+export const publicProcedure = t.procedure.use(tracingMiddleware);
 
 /**
  * Protected (authenticated) procedure
@@ -142,5 +135,19 @@ export const publicProcedure = t.procedure.use(timingMiddleware);
  * @see https://trpc.io/docs/procedures
  */
 export const protectedProcedure = t.procedure
-  .use(timingMiddleware)
-  .use(authMiddleware);
+  .use(tracingMiddleware)
+  .use(({ ctx, next }) => {
+    if (!ctx.session?.user) {
+      throw new TRPCError({ code: "UNAUTHORIZED" });
+    }
+    return next({
+      ctx: {
+        // infers the `session` as non-nullable
+        session: { ...ctx.session, user: ctx.session.user },
+      },
+    });
+  });
+
+/**
+ * Additional types can be added here for shared server helpers.
+ */
