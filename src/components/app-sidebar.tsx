@@ -1,228 +1,189 @@
 "use client";
 
 import * as React from "react";
-import {
-    User,
-    Settings,
-    ChevronUp,
-    LogOut,
-    Shield,
-    HomeIcon,
-    SettingsIcon,
-    Users,
-    Gauge,
-} from "lucide-react";
-
-import {
-    Sidebar,
-    SidebarContent,
-    SidebarFooter,
-    SidebarGroup,
-    SidebarGroupContent,
-    SidebarHeader,
-    SidebarMenu,
-    SidebarMenuButton,
-    SidebarMenuItem,
-} from "@/components/ui/sidebar";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { authClient } from "@/lib/auth/auth-client";
+import { ChevronUp, Home, Settings } from "lucide-react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
 import { usePathname } from "next/navigation";
 
-// Base menu items
-const baseItems = [
-    {
-        title: "Dashboard",
-        url: "/dashboard",
-        icon: HomeIcon,
-    },
-    {
-        title: "Settings",
-        url: "/dashboard/settings",
-        icon: SettingsIcon,
-    },
-];
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarGroupLabel,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarRail,
+} from "@/components/ui/sidebar";
+import { authClient } from "@/server/better-auth/client";
 
-export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const { data: session } = authClient.useSession();
-    const router = useRouter();
-    const pathname = usePathname();
-    const [canSeeAdmin, setCanSeeAdmin] = React.useState(false);
+interface AppSidebarProps {
+  user: {
+    id: string;
+    name: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    email: string;
+    image?: string | null;
+  };
+}
 
-    React.useEffect(() => {
-        let mounted = true;
-        // Check permission dynamically so sidebar updates accurately
-        void (async () => {
-            try {
-                if (!session?.user?.id) {
-                    if (mounted) setCanSeeAdmin(false);
-                    return;
-                }
-                const allowed = await authClient.admin.hasPermission({
-                    permissions: { user: ["list"] },
-                });
-                if (mounted) setCanSeeAdmin(Boolean(allowed));
-            } catch {
-                if (mounted) setCanSeeAdmin(false);
-            }
-        })();
-        return () => {
-            mounted = false;
-        };
-    }, [session?.user?.id]);
+export function AppSidebar({ user }: AppSidebarProps) {
+  const pathname = usePathname();
 
-    const handleSignOut = async () => {
-        await authClient.signOut({
-            fetchOptions: {
-                onSuccess: () => {
-                    router.push("/signin");
-                },
-            },
-        });
-    };
+  const handleSignOut = async () => {
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          window.location.href = "/";
+        },
+      },
+    });
+  };
 
-    // Fixed active state logic
-    const isActiveRoute = (itemUrl: string) => {
-        // Only mark a parent active if it is an exact match, not when a deeper child path is active.
-        // This prevents both Admin and Users being highlighted on /dashboard/admin/users
-        return pathname === itemUrl;
-    };
+  const getInitials = () => {
+    // Try first/last name initials first
+    const first = user.firstName?.[0]?.toUpperCase() ?? "";
+    const last = user.lastName?.[0]?.toUpperCase() ?? "";
+    if (first || last) return first + last;
 
-    // Compute role-based items
-    const roles = String(session?.user?.role ?? "user")
-        .split(",")
-        .map((r) => r.trim());
-    const isAdminRole = roles.includes("admin");
-    const showAdmin = isAdminRole || canSeeAdmin;
-    const items = [
-        ...baseItems,
-        // Admin-only items appended conditionally
-        ...(showAdmin
-            ? [
-                  { title: "Admin", url: "/dashboard/admin", icon: Gauge },
-                  {
-                      title: "Users",
-                      url: "/dashboard/admin/users",
-                      icon: Users,
-                  },
-              ]
-            : []),
-    ] as const;
+    // Fallback to name field initials
+    if (user.name) {
+      return user.name
+        .split(" ")
+        .map((n) => n[0])
+        .join("")
+        .toUpperCase()
+        .slice(0, 2);
+    }
+    return "U";
+  };
 
-    return (
-        <Sidebar
-            variant="inset"
-            {...props}
-            className="border-sidebar-border bg-sidebar border-r"
-        >
-            <SidebarHeader className="border-sidebar-border border-b p-4">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <SidebarMenuButton
-                            size="lg"
-                            asChild
-                            className="hover:bg-sidebar-accent"
-                        >
-                            <Link href="/dashboard">
-                                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                                    <Shield className="size-4 font-bold" />
-                                </div>
-                                <div className="grid flex-1 text-left text-sm leading-tight">
-                                    <span className="truncate text-xs font-bold tracking-wider uppercase">
-                                        NextCerator
-                                    </span>
-                                    <span className="text-muted-foreground mt-1 truncate text-xs">
-                                        v2.1.7
-                                    </span>
-                                </div>
-                            </Link>
-                        </SidebarMenuButton>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarHeader>
-            <SidebarContent className="px-2 py-4">
-                <SidebarGroup>
-                    <SidebarGroupContent>
-                        <SidebarMenu className="space-y-1">
-                            {items.map((item) => {
-                                const isActive = isActiveRoute(item.url);
-                                return (
-                                    <SidebarMenuItem key={item.title}>
-                                        <SidebarMenuButton
-                                            asChild
-                                            className={`hover:bg-sidebar-accent hover:text-sidebar-accent-foreground h-10 px-3 text-xs font-medium tracking-wider uppercase ${isActive ? "bg-primary text-primary-foreground shadow-md" : ""} `}
-                                        >
-                                            <Link
-                                                href={item.url}
-                                                className="flex items-center gap-3"
-                                            >
-                                                <item.icon className="size-4" />
-                                                <span>{item.title}</span>
-                                            </Link>
-                                        </SidebarMenuButton>
-                                    </SidebarMenuItem>
-                                );
-                            })}
-                        </SidebarMenu>
-                    </SidebarGroupContent>
-                </SidebarGroup>
-            </SidebarContent>
-            <SidebarFooter className="border-sidebar-border border-t p-2">
-                <SidebarMenu>
-                    <SidebarMenuItem>
-                        <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                                <SidebarMenuButton
-                                    size="lg"
-                                    className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground hover:bg-sidebar-accent"
-                                >
-                                    <div className="bg-sidebar-primary text-sidebar-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
-                                        <User className="size-4" />
-                                    </div>
-                                    <div className="grid flex-1 text-left text-sm leading-tight">
-                                        <span className="truncate text-xs font-semibold">
-                                            {session?.user?.name ?? "OPERATOR"}
-                                        </span>
-                                        <span className="text-muted-foreground truncate text-xs">
-                                            v2.1.7
-                                        </span>
-                                    </div>
-                                    <ChevronUp className="ml-auto size-4" />
-                                </SidebarMenuButton>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent
-                                className="bg-popover border-border w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
-                                side="bottom"
-                                align="end"
-                                sideOffset={4}
-                            >
-                                <DropdownMenuItem
-                                    asChild
-                                    className="hover:bg-accent hover:text-accent-foreground"
-                                >
-                                    <Link href="/dashboard/settings">
-                                        <Settings className="mr-2 size-4" />
-                                        Settings
-                                    </Link>
-                                </DropdownMenuItem>
-                                <DropdownMenuItem
-                                    onClick={handleSignOut}
-                                    className="hover:bg-accent hover:text-accent-foreground"
-                                >
-                                    <LogOut className="mr-2 size-4" />
-                                    Sign out
-                                </DropdownMenuItem>
-                            </DropdownMenuContent>
-                        </DropdownMenu>
-                    </SidebarMenuItem>
-                </SidebarMenu>
-            </SidebarFooter>
-        </Sidebar>
-    );
+  const displayName =
+    [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+    user.name ||
+    "User";
+
+  return (
+    <Sidebar collapsible="icon" variant="inset">
+      <SidebarHeader>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <SidebarMenuButton size="lg" asChild>
+              <Link href="/dashboard/home">
+                <div className="bg-primary text-primary-foreground flex aspect-square size-8 items-center justify-center rounded-lg">
+                  <span className="text-sm font-semibold">A</span>
+                </div>
+                <div className="grid flex-1 text-left text-sm leading-tight">
+                  <span className="truncate font-semibold">Your App</span>
+                  <span className="text-muted-foreground truncate text-xs">
+                    Dashboard
+                  </span>
+                </div>
+              </Link>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarHeader>
+
+      <SidebarContent>
+        {/* Main Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel>Navigation</SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/home"}
+                  tooltip="Home"
+                >
+                  <Link href="/dashboard/home">
+                    <Home />
+                    <span>Home</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={pathname === "/dashboard/settings"}
+                  tooltip="Settings"
+                >
+                  <Link href="/dashboard/settings">
+                    <Settings />
+                    <span>Settings</span>
+                  </Link>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+      </SidebarContent>
+
+      <SidebarFooter>
+        <SidebarMenu>
+          <SidebarMenuItem>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <SidebarMenuButton
+                  size="lg"
+                  className="data-[state=open]:bg-sidebar-accent data-[state=open]:text-sidebar-accent-foreground"
+                >
+                  <Avatar className="size-8 rounded-lg">
+                    <AvatarImage
+                      src={user.image ?? undefined}
+                      alt={displayName}
+                    />
+                    <AvatarFallback className="rounded-lg">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="grid flex-1 text-left text-sm leading-tight">
+                    <span className="truncate font-semibold">
+                      {displayName}
+                    </span>
+                    <span className="text-muted-foreground truncate text-xs">
+                      {user.email}
+                    </span>
+                  </div>
+                  <ChevronUp className="ml-auto size-4" />
+                </SidebarMenuButton>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent
+                className="w-[--radix-dropdown-menu-trigger-width] min-w-56 rounded-lg"
+                side="top"
+                align="end"
+                sideOffset={4}
+              >
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard/settings">
+                    <Settings className="mr-2 size-4" />
+                    Settings
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleSignOut}>
+                  Sign out
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
+
+      <SidebarRail />
+    </Sidebar>
+  );
 }
