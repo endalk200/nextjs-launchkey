@@ -1,70 +1,38 @@
 import "@/styles/globals.css";
 
-import { type Metadata, type Viewport } from "next";
-import { Toaster } from "@/components/ui/sonner";
+import { type Metadata } from "next";
+import { Geist } from "next/font/google";
 
-import { TRPCReactProvider } from "@/trpc/react";
 import { ThemeProvider } from "@/components/theme-provider";
+import { TRPCReactProvider } from "@/trpc/react";
 
 export const metadata: Metadata = {
-    title: "NextCelerator — modern fully featured NextJs starter kit",
-    description:
-        "NextCelerator is a modern fully featured NextJs starter kit with shadcn/ui, tailwindcss, typescript, prisma, and more.",
-    keywords: ["NextCelerator"],
-    authors: [
-        {
-            name: "Endalkachew Biruk <@endalk200>",
-            url: "https://endalk200.com",
-        },
-    ],
-    openGraph: {
-        title: "NextCelerator — modern fully featured NextJs starter kit",
-        description:
-            "NextCelerator is a modern fully featured NextJs starter kit with shadcn/ui, tailwindcss, typescript, prisma, and more.",
-        url: "https://nextcelerator.com/",
-        siteName: "NextCelerator",
-        images: [
-            {
-                url: "https://nextcelerator.com/og-image.v050725.png",
-                width: 1200,
-                height: 630,
-            },
-        ],
-        locale: "en_US",
-        type: "website",
-    },
-    twitter: {
-        card: "summary_large_image",
-        title: "NextCelerator — modern fully featured NextJs starter kit",
-        description:
-            "NextCelerator is a modern fully featured NextJs starter kit with shadcn/ui, tailwindcss, typescript, prisma, and more.",
-        images: ["https://nextcelerator.com/og-image.v050725.png"],
-    },
-    robots: "noindex, nofollow",
+  title: "Congregation Manager",
+  description:
+    "A modern platform for managing congregation work of Jehovah's Witnesses",
+  icons: [{ rel: "icon", url: "/favicon.ico" }],
 };
 
-export const viewport: Viewport = {
-    width: "device-width",
-    initialScale: 1.0,
-};
+const geist = Geist({
+  subsets: ["latin"],
+  variable: "--font-geist-sans",
+});
 
 export default function RootLayout({
-    children,
+  children,
 }: Readonly<{ children: React.ReactNode }>) {
-    return (
-        <html lang="en" suppressHydrationWarning>
-            <body className="bg-background text-foreground font-mono antialiased">
-                <ThemeProvider
-                    attribute="class"
-                    defaultTheme="dark"
-                    enableSystem
-                    disableTransitionOnChange
-                    storageKey="nextcelerator-theme"
-                >
-                    <TRPCReactProvider>{children}</TRPCReactProvider>
-                    <Toaster theme="dark" />
-                </ThemeProvider>
-            </body>
-        </html>
-    );
+  return (
+    <html lang="en" className={`${geist.variable}`} suppressHydrationWarning>
+      <body>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TRPCReactProvider>{children}</TRPCReactProvider>
+        </ThemeProvider>
+      </body>
+    </html>
+  );
 }
