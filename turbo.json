@@ -1,6 +1,6 @@
 {
 	"$schema": "https://turborepo.dev/schema.json",
-	"ui": "tui",
+	"ui": "stream",
 	"tasks": {
 		"build": {
 			"dependsOn": ["^build"],
@@ -10,8 +10,15 @@
 		"lint": {
 			"dependsOn": ["^lint"]
 		},
+		"lint:fix": {
+			"dependsOn": ["^lint:fix"],
+			"cache": false
+		},
 		"check-types": {
 			"dependsOn": ["^check-types"]
+		},
+		"test": {
+			"dependsOn": ["^test"]
 		},
 		"dev": {
 			"cache": false,
