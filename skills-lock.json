@@ -25,6 +25,12 @@
 			"skillPath": "skills/engineering/improve-codebase-architecture/SKILL.md",
 			"computedHash": "682b41a3835f4aaf7cdb6b823ba39fb7fb7bcc67684baf7591d67680e63cc7d4"
 		},
+		"shadcn": {
+			"source": "shadcn/ui",
+			"sourceType": "github",
+			"skillPath": "skills/shadcn/SKILL.md",
+			"computedHash": "80a6226e78f6d1fe464214ae0ef449d49d8ffaa3e7704f011e9b418c678ad4d1"
+		},
 		"source-context": {
 			"source": "endalk200/skills",
 			"sourceType": "github",
@@ -48,6 +54,12 @@
 			"sourceType": "github",
 			"skillPath": "skills/engineering/to-prd/SKILL.md",
 			"computedHash": "7259cea5e1abb2e69861c75c8ad92143a8d6191811b30fcbfac68f507988b467"
+		},
+		"turborepo": {
+			"source": "vercel/turborepo",
+			"sourceType": "github",
+			"skillPath": "skills/turborepo/SKILL.md",
+			"computedHash": "6a23ee82918e35f8848b6fc2ccbea699d740a30fee65f288201adb4e98bf3827"
 		},
 		"write-a-skill": {
 			"source": "endalk200/skills",
