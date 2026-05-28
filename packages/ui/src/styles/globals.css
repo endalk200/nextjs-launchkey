@@ -5,6 +5,7 @@
 @source "../components";
 @source "../../../../apps/web/app";
 @source "../../../../apps/web/components";
+@source "../../../../packages/domains/post/src";
 
 @custom-variant dark (&:is(.dark *));
 
