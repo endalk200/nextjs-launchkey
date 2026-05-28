@@ -1,12 +1,12 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { disposePostRpc, postRpc } from "./rpc-client.ts";
+import { PostClient } from "./client.ts";
 
 const postsQueryKey = ["posts"] as const;
 
 if (typeof window !== "undefined") {
-	window.addEventListener("pagehide", () => void disposePostRpc(), {
+	window.addEventListener("pagehide", () => void PostClient.dispose(), {
 		once: true,
 	});
 }
@@ -14,7 +14,7 @@ if (typeof window !== "undefined") {
 export function usePosts() {
 	return useQuery({
 		queryKey: postsQueryKey,
-		queryFn: postRpc.list,
+		queryFn: PostClient.list,
 	});
 }
 
@@ -22,8 +22,7 @@ export function useCreatePost() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: { title: string; content: string }) =>
-			postRpc.create(input.title, input.content),
+		mutationFn: PostClient.create,
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: postsQueryKey }),
 	});
 }
@@ -32,8 +31,7 @@ export function useUpdatePost() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (input: { id: string; title: string; content: string }) =>
-			postRpc.update(input.id, input.title, input.content),
+		mutationFn: PostClient.update,
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: postsQueryKey }),
 	});
 }
@@ -42,7 +40,7 @@ export function useDeletePost() {
 	const queryClient = useQueryClient();
 
 	return useMutation({
-		mutationFn: (id: string) => postRpc.delete(id),
+		mutationFn: PostClient.delete,
 		onSuccess: () => queryClient.invalidateQueries({ queryKey: postsQueryKey }),
 	});
 }

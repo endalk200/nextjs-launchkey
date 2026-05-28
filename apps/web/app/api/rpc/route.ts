@@ -1,4 +1,9 @@
-import { PostHandlers, PostRepoLive, PostRpcs } from "@app/post/server";
+import {
+	PostHandlers,
+	PostOperationsLive,
+	PostRepoLive,
+	PostRpcs,
+} from "@app/post/server";
 import { Layer } from "effect";
 import { HttpRouter } from "effect/unstable/http";
 import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
@@ -9,6 +14,8 @@ const AppRpcs = PostRpcs;
 
 const AppHandlers = PostHandlers;
 
+const AppOperations = PostOperationsLive;
+
 const AppRepositories = PostRepoLive;
 
 const ServerLayer = RpcServer.layerHttp({
@@ -17,6 +24,7 @@ const ServerLayer = RpcServer.layerHttp({
 	protocol: "http",
 }).pipe(
 	Layer.provide(AppHandlers),
+	Layer.provide(AppOperations),
 	Layer.provide(AppRepositories),
 	Layer.provide(RpcSerialization.layerJson),
 );

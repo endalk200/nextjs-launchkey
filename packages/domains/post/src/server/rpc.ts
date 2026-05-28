@@ -1,7 +1,9 @@
 import { Rpc, RpcGroup } from "effect/unstable/rpc";
 import { Post } from "../model/post.ts";
-import { Schema } from "effect";
+import { Schema, Effect } from "effect";
 import { PostNotFound } from "../model/errors.ts";
+
+import { PostService } from "./service.ts";
 
 export class ListPosts extends Rpc.make("Post.List", {
 	success: Schema.Array(Post),
@@ -39,3 +41,16 @@ export class PostRpcs extends RpcGroup.make(
 	DeletePost,
 	UpdatePost,
 ) {}
+
+export const PostHandlers = PostRpcs.toLayer(
+	Effect.gen(function* () {
+		const posts = yield* PostService;
+
+		return PostRpcs.of({
+			"Post.List": () => posts.list,
+			"Post.Create": (input) => posts.create(input),
+			"Post.Delete": ({ id }) => posts.delete(id),
+			"Post.Update": (input) => posts.update(input),
+		});
+	}),
+);
