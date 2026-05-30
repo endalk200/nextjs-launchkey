@@ -83,4 +83,20 @@ describe("PostOperations", () => {
 			PostNotFound,
 		);
 	});
+
+	it("preserves PostNotFound errors when updating a missing post", async () => {
+		const program = Effect.gen(function* () {
+			const posts = yield* PostService;
+
+			return yield* posts.update({
+				id: "missing",
+				title: "Updated post",
+				content: "Updated body",
+			});
+		});
+
+		await expect(runPostOperation(program)).rejects.toBeInstanceOf(
+			PostNotFound,
+		);
+	});
 });

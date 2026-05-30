@@ -102,6 +102,42 @@ describe("PostList", () => {
 		expect(screen.getByText("Showing 1 to 2 of 2 posts")).toBeInTheDocument();
 	});
 
+	it("keeps the create form open while creation is pending", async () => {
+		const onCreatePost = vi.fn(() => new Promise<undefined>(() => undefined));
+
+		renderPostList({ onCreatePost });
+		fireEvent.click(screen.getByRole("button", { name: "New Post" }));
+		fireEvent.change(screen.getByPlaceholderText("Enter title"), {
+			target: { value: "New post" },
+		});
+		fireEvent.change(
+			screen.getByPlaceholderText("Write your content here..."),
+			{
+				target: { value: "New body" },
+			},
+		);
+		fireEvent.click(screen.getByRole("button", { name: "Save" }));
+
+		await waitFor(() => {
+			expect(onCreatePost).toHaveBeenCalledTimes(1);
+		});
+		expect(
+			screen.getByRole("heading", { name: "Create Post" }),
+		).toBeInTheDocument();
+	});
+
+	it("cancels creating a post and returns to the table", () => {
+		renderPostList();
+
+		fireEvent.click(screen.getByRole("button", { name: "New Post" }));
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		expect(screen.getByText("Showing 1 to 2 of 2 posts")).toBeInTheDocument();
+		expect(
+			screen.queryByRole("heading", { name: "Create Post" }),
+		).not.toBeInTheDocument();
+	});
+
 	it("opens a post detail view from the table", () => {
 		renderPostList();
 
@@ -140,6 +176,22 @@ describe("PostList", () => {
 		});
 	});
 
+	it("cancels editing and returns to the selected post detail", () => {
+		renderPostList();
+
+		fireEvent.click(screen.getByRole("button", { name: "First post" }));
+		fireEvent.click(screen.getByRole("button", { name: "Edit" }));
+		fireEvent.change(screen.getByPlaceholderText("Enter title"), {
+			target: { value: "Unsaved title" },
+		});
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		expect(
+			screen.getByRole("heading", { name: "First post" }),
+		).toBeInTheDocument();
+		expect(screen.queryByDisplayValue("Unsaved title")).not.toBeInTheDocument();
+	});
+
 	it("confirms deletion before deleting a post", async () => {
 		const onDeletePost = vi.fn().mockResolvedValue(undefined);
 
@@ -159,5 +211,40 @@ describe("PostList", () => {
 		await waitFor(() => {
 			expect(onDeletePost).toHaveBeenCalledWith("post-1");
 		});
+	});
+
+	it("cancels deletion without calling the delete handler", () => {
+		const onDeletePost = vi.fn().mockResolvedValue(undefined);
+
+		renderPostList({ onDeletePost });
+		fireEvent.click(screen.getAllByRole("button", { name: "Delete" }).at(0)!);
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		expect(onDeletePost).not.toHaveBeenCalled();
+		expect(
+			screen.queryByRole("heading", { name: "Delete Post" }),
+		).not.toBeInTheDocument();
+	});
+
+	it("returns from detail view to the table", () => {
+		renderPostList();
+
+		fireEvent.click(screen.getByRole("button", { name: "First post" }));
+		fireEvent.click(screen.getByRole("button", { name: "<- Back to Posts" }));
+
+		expect(screen.getByText("Showing 1 to 2 of 2 posts")).toBeInTheDocument();
+	});
+
+	it("disables form and dialog actions while pending", () => {
+		renderPostList({ isPending: true });
+
+		fireEvent.click(screen.getByRole("button", { name: "New Post" }));
+		expect(screen.getByRole("button", { name: "Save" })).toBeDisabled();
+		fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+
+		fireEvent.click(screen.getAllByRole("button", { name: "Delete" }).at(0)!);
+		expect(
+			screen.getAllByRole("button", { name: "Delete" }).at(-1),
+		).toBeDisabled();
 	});
 });
