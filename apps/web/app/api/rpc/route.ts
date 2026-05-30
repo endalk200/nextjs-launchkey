@@ -6,7 +6,7 @@ import {
 } from "@app/post/server";
 import { context, isSpanContextValid, trace } from "@opentelemetry/api";
 import { Layer } from "effect";
-import { HttpRouter } from "effect/unstable/http";
+import { HttpMiddleware, HttpRouter } from "effect/unstable/http";
 import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
 import { OtelLive } from "../../../observability/otel.node.ts";
 
@@ -32,7 +32,10 @@ const ServerLayer = RpcServer.layerHttp({
 	Layer.provideMerge(OtelLive),
 );
 
-const { dispose, handler } = HttpRouter.toWebHandler(ServerLayer);
+const webHandler = HttpRouter.toWebHandler(ServerLayer, {
+	middleware: (effect) => HttpMiddleware.tracer(effect),
+});
+const handler = webHandler.handler as (request: Request) => Promise<Response>;
 
 const propagationHeaders = [
 	"b3",
@@ -78,4 +81,4 @@ function requestForActiveServerTrace(request: Request) {
 export const POST = (request: Request) =>
 	handler(requestForActiveServerTrace(request));
 
-export const disposeRpcRoute = dispose;
+export const disposeRpcRoute = webHandler.dispose;
