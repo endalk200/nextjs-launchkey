@@ -57,6 +57,7 @@ export function PostForm({
 	return (
 		<form
 			className="min-h-[520px] px-7 py-9"
+			data-testid="post-form"
 			onSubmit={(event) => {
 				event.preventDefault();
 				event.stopPropagation();
@@ -91,6 +92,7 @@ export function PostForm({
 									onChange={(event) => field.handleChange(event.target.value)}
 									placeholder="Enter title"
 									aria-invalid={isInvalid}
+									data-testid="post-form-title-input"
 								/>
 								<FieldError errors={errors} />
 							</Field>
@@ -122,6 +124,7 @@ export function PostForm({
 									onChange={(event) => field.handleChange(event.target.value)}
 									placeholder="Write your content here..."
 									aria-invalid={isInvalid}
+									data-testid="post-form-content-input"
 								/>
 								<FieldError errors={errors} />
 							</Field>
@@ -136,6 +139,7 @@ export function PostForm({
 					variant="outline"
 					size="lg"
 					className="min-w-28"
+					data-testid="post-form-cancel-button"
 					onClick={onCancel}
 				>
 					Cancel
@@ -145,6 +149,7 @@ export function PostForm({
 					size="lg"
 					className="min-w-28"
 					disabled={isPending}
+					data-testid="post-form-save-button"
 				>
 					Save
 				</Button>

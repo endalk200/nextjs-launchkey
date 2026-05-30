@@ -21,7 +21,7 @@ export function PostTable({
 }) {
 	return (
 		<div className="min-h-[520px] px-7 py-8">
-			<Table className="table-fixed">
+			<Table className="table-fixed" data-testid="posts-table">
 				<TableHeader>
 					<TableRow>
 						<TableHead>Title</TableHead>
