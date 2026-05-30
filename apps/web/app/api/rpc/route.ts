@@ -37,7 +37,7 @@ const webHandler = HttpRouter.toWebHandler(ServerLayer, {
 });
 const handler = webHandler.handler as (request: Request) => Promise<Response>;
 
-const propagationHeaders = [
+const tracePropagationHeaders = [
 	"b3",
 	"traceparent",
 	"tracestate",
@@ -48,7 +48,7 @@ const propagationHeaders = [
 	"x-b3-traceid",
 ];
 
-function requestForActiveServerTrace(request: Request) {
+function requestWithActiveServerTrace(request: Request) {
 	const activeSpanContext = trace.getSpan(context.active())?.spanContext();
 
 	if (
@@ -60,10 +60,14 @@ function requestForActiveServerTrace(request: Request) {
 
 	const headers = new Headers(request.headers);
 
-	for (const header of propagationHeaders) {
+	for (const header of tracePropagationHeaders) {
 		headers.delete(header);
 	}
 
+	// Effect's HTTP tracer reads incoming propagation headers to choose the
+	// parent span. In a Next route handler, the parent span already lives in the
+	// active OpenTelemetry context, so rewrite the request propagation headers to
+	// point at that server span before passing the request into Effect.
 	headers.set(
 		"traceparent",
 		`00-${activeSpanContext.traceId}-${activeSpanContext.spanId}-${activeSpanContext.traceFlags.toString(16).padStart(2, "0")}`,
@@ -79,6 +83,6 @@ function requestForActiveServerTrace(request: Request) {
 }
 
 export const POST = (request: Request) =>
-	handler(requestForActiveServerTrace(request));
+	handler(requestWithActiveServerTrace(request));
 
 export const disposeRpcRoute = webHandler.dispose;
