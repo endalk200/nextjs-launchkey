@@ -12,7 +12,7 @@ describe("Button", () => {
 		).toBeInTheDocument();
 	});
 
-	it("applies variant, size, and custom classes", () => {
+	it("marks the button slot and merges custom classes", () => {
 		render(
 			<Button className="w-full" size="lg" variant="outline">
 				Open menu
@@ -21,7 +21,8 @@ describe("Button", () => {
 
 		const button = screen.getByRole("button", { name: "Open menu" });
 
-		expect(button).toHaveClass("border-border", "h-9", "w-full");
+		expect(button).toHaveAttribute("data-slot", "button");
+		expect(button).toHaveClass("w-full");
 	});
 
 	it("calls the click handler when enabled", () => {

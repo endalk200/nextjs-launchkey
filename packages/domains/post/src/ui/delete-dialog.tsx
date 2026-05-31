@@ -14,7 +14,10 @@ export function DeletePostDialog({
 }) {
 	return (
 		<div className="fixed inset-0 z-50 grid place-items-center bg-black/45 px-4">
-			<div className="w-full max-w-md rounded-lg border border-[#dfe3ea] bg-white p-10 text-center shadow-xl">
+			<div
+				className="w-full max-w-md rounded-lg border border-[#dfe3ea] bg-white p-10 text-center shadow-xl"
+				data-testid="delete-post-dialog"
+			>
 				<div className="mx-auto mb-7 grid size-20 place-items-center rounded-full bg-[#ffe1e3] text-[#ef3340]">
 					<div className="relative h-9 w-7 rounded-sm border-3 border-current">
 						<div className="absolute -top-2 left-1 h-1 w-5 rounded bg-current" />
@@ -30,7 +33,13 @@ export function DeletePostDialog({
 				</p>
 				<p className="sr-only">{post.title}</p>
 				<div className="mt-9 grid grid-cols-2 gap-4">
-					<Button type="button" variant="outline" size="lg" onClick={onCancel}>
+					<Button
+						type="button"
+						variant="outline"
+						size="lg"
+						data-testid="delete-post-cancel-button"
+						onClick={onCancel}
+					>
 						Cancel
 					</Button>
 					<Button
@@ -38,6 +47,7 @@ export function DeletePostDialog({
 						variant="destructive"
 						size="lg"
 						disabled={isPending}
+						data-testid="delete-post-confirm-button"
 						onClick={onConfirm}
 					>
 						Delete

@@ -13,10 +13,11 @@ export function PostDetail({
 	onDelete: () => void;
 }) {
 	return (
-		<div className="min-h-[520px] px-7 py-9">
+		<div className="min-h-[520px] px-7 py-9" data-testid="post-detail">
 			<button
 				type="button"
 				className="mb-8 font-medium text-[#0b63ce] text-sm"
+				data-testid="post-detail-back-button"
 				onClick={onBack}
 			>
 				{"<-"} Back to Posts
@@ -34,6 +35,7 @@ export function PostDetail({
 					variant="outline"
 					size="lg"
 					className="min-w-20"
+					data-testid="post-detail-edit-button"
 					onClick={onEdit}
 				>
 					Edit
@@ -43,6 +45,7 @@ export function PostDetail({
 					variant="destructive-ghost"
 					size="lg"
 					className="min-w-24"
+					data-testid="post-detail-delete-button"
 					onClick={onDelete}
 				>
 					Delete

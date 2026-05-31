@@ -29,6 +29,7 @@
 	"devDependencies": {
 		"@app/biome-config": "^",
 		"@app/typescript-config": "*",
+		"@playwright/test": "^1.60.0",
 		"@tailwindcss/postcss": "^4.3.0",
 		"@types/node": "^22.15.3",
 		"@types/react": "19.2.2",
@@ -49,6 +50,10 @@
 		"format:write": "biome format . --write",
 		"check-types": "next typegen && tsc --noEmit",
 		"test": "vitest run",
-		"test:watch": "vitest"
+		"test:watch": "vitest",
+		"test:e2e": "playwright test",
+		"test:e2e:headed": "playwright test --headed",
+		"test:e2e:ui": "playwright test --ui",
+		"playwright:install": "playwright install chromium"
 	}
 }

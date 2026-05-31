@@ -18,6 +18,7 @@ export function PostEmptyState({ onCreate }: { onCreate: () => void }) {
 				type="button"
 				size="lg"
 				className="mt-6 min-w-28"
+				data-testid="posts-empty-new-button"
 				onClick={onCreate}
 			>
 				New Post
