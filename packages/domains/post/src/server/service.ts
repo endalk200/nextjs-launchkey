@@ -1,7 +1,10 @@
 import { Context, Effect, Layer } from "effect";
-import { PostNotFound } from "../model/errors.ts";
 import type { Post } from "../model/post.ts";
-import { PostRepository } from "./repo.ts";
+import {
+	PostNotFoundError,
+	PostOperationFailedError,
+} from "../model/errors.ts";
+import { PostRepository } from "./post.repository.ts";
 
 type CreatePostInput = {
 	readonly title: string;
@@ -17,12 +20,16 @@ type UpdatePostInput = {
 export class PostService extends Context.Service<
 	PostService,
 	{
-		readonly list: Effect.Effect<ReadonlyArray<Post>>;
-		readonly create: (input: CreatePostInput) => Effect.Effect<Post>;
-		readonly delete: (id: string) => Effect.Effect<Post, PostNotFound>;
+		readonly list: Effect.Effect<ReadonlyArray<Post>, PostOperationFailedError>;
+		readonly create: (
+			input: CreatePostInput,
+		) => Effect.Effect<Post, PostOperationFailedError>;
+		readonly delete: (
+			id: string,
+		) => Effect.Effect<Post, PostNotFoundError | PostOperationFailedError>;
 		readonly update: (
 			input: UpdatePostInput,
-		) => Effect.Effect<Post, PostNotFound>;
+		) => Effect.Effect<Post, PostNotFoundError | PostOperationFailedError>;
 	}
 >()("app/PostOperations") {}
 
@@ -32,7 +39,7 @@ export const PostOperationsLive = Layer.effect(
 		const repo = yield* PostRepository;
 
 		return {
-			list: Effect.gen(function* () {
+			list: Effect.fn("PostService.List")(function* () {
 				const posts = yield* repo.list;
 
 				yield* Effect.annotateCurrentSpan({ count: posts.length });
@@ -42,10 +49,10 @@ export const PostOperationsLive = Layer.effect(
 				);
 
 				return posts;
-			}).pipe(Effect.withSpan("Post.List")),
+			})(),
 
 			create: ({ title, content }) =>
-				Effect.gen(function* () {
+				Effect.fn("PostService.Create")(function* () {
 					const post = yield* repo.create(title, content);
 
 					yield* Effect.annotateCurrentSpan({ id: post.id });
@@ -55,10 +62,10 @@ export const PostOperationsLive = Layer.effect(
 					);
 
 					return post;
-				}).pipe(Effect.withSpan("Post.Create")),
+				})(),
 
 			delete: (id) =>
-				Effect.gen(function* () {
+				Effect.fn("PostService.Delete")(function* () {
 					const post = yield* repo.delete(id);
 
 					yield* Effect.annotateCurrentSpan({ id: post.id });
@@ -68,10 +75,10 @@ export const PostOperationsLive = Layer.effect(
 					);
 
 					return post;
-				}).pipe(Effect.withSpan("Post.Delete")),
+				})(),
 
 			update: ({ id, title, content }) =>
-				Effect.gen(function* () {
+				Effect.fn("PostService.Update")(function* () {
 					const post = yield* repo.update(id, title, content);
 
 					yield* Effect.annotateCurrentSpan({ id: post.id });
@@ -81,7 +88,7 @@ export const PostOperationsLive = Layer.effect(
 					);
 
 					return post;
-				}).pipe(Effect.withSpan("Post.Update")),
+				})(),
 		};
 	}),
 );
