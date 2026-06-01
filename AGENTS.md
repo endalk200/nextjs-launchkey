@@ -14,3 +14,9 @@ Whenever you make changes to the codebase run:
 - `bun run check-types`
 - `bun run lint`
 - `bun run test`
+
+## NOTES
+
+- Before starting any work make sure you have good understanding of the goal or objective of the work.
+- Don't stop until you have achieved the goal or objective of your work.
+- Always verify your work before finishing.
