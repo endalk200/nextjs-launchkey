@@ -1,18 +1,42 @@
 import { PrismaPg } from "@prisma/adapter-pg";
-import { Context, Data, Effect, Layer } from "effect";
-import { PrismaClient } from "./generated/client.ts";
+import { Context, Effect, Layer } from "effect";
+import {
+	ConnectionUnavailable,
+	DatabaseConfigurationError,
+	DatabaseConnectionError,
+	DatabaseError,
+	DatabaseValidationError,
+	ForeignKeyConstraintViolation,
+	QueryTimedOut,
+	RecordRequiredButMissing,
+	TransactionWriteConflict,
+	UnexpectedDatabaseError,
+	UniqueConstraintViolation,
+} from "./errors.ts";
+import { Prisma, PrismaClient } from "./generated/client.ts";
 
-export class DatabaseConfigurationError extends Data.TaggedError(
-	"DatabaseConfigurationError",
-)<{
-	readonly message: string;
-}> {}
+export type DatabaseOperation = {
+	readonly operation: string;
+	readonly model?: string;
+};
 
-export class DatabaseConnectionError extends Data.TaggedError(
-	"DatabaseConnectionError",
-)<{
-	readonly cause: unknown;
-}> {}
+type OperationClient = PrismaClient | Prisma.TransactionClient;
+
+export type TransactionOptions = {
+	readonly retries?: number;
+};
+
+export type TransactionContext = {
+	readonly client: Prisma.TransactionClient;
+	readonly query: <A>(
+		metadata: DatabaseOperation,
+		operation: (client: Prisma.TransactionClient) => PromiseLike<A>,
+	) => Effect.Effect<A, DatabaseError>;
+	readonly mutation: <A>(
+		metadata: DatabaseOperation,
+		operation: (client: Prisma.TransactionClient) => PromiseLike<A>,
+	) => Effect.Effect<A, DatabaseError>;
+};
 
 export class PrismaService extends Context.Service<
 	PrismaService,
@@ -20,6 +44,28 @@ export class PrismaService extends Context.Service<
 		readonly client: PrismaClient;
 	}
 >()("app/PrismaService") {}
+
+export class Database extends Context.Service<
+	Database,
+	{
+		readonly client: PrismaClient;
+		readonly query: <A>(
+			metadata: DatabaseOperation,
+			operation: (client: PrismaClient) => PromiseLike<A>,
+		) => Effect.Effect<A, DatabaseError>;
+		readonly mutation: <A>(
+			metadata: DatabaseOperation,
+			operation: (client: PrismaClient) => PromiseLike<A>,
+		) => Effect.Effect<A, DatabaseError>;
+		readonly transaction: <A, E>(
+			metadata: DatabaseOperation,
+			operation: (
+				transaction: TransactionContext,
+			) => Effect.Effect<A, E | DatabaseError>,
+			options?: TransactionOptions,
+		) => Effect.Effect<A, E | DatabaseError>;
+	}
+>()("app/Database") {}
 
 const readDatabaseUrl = Effect.gen(function* () {
 	const databaseUrl = process.env.DATABASE_URL;
@@ -66,9 +112,187 @@ const acquirePrismaClient = readDatabaseUrl.pipe(
 	),
 );
 
+function metadataFields(
+	metadata: DatabaseOperation,
+): Pick<DatabaseOperation, "operation" | "model"> {
+	return metadata.model === undefined
+		? { operation: metadata.operation }
+		: { operation: metadata.operation, model: metadata.model };
+}
+
+function stringArray(value: unknown): ReadonlyArray<string> {
+	if (Array.isArray(value)) {
+		return value.filter((item): item is string => typeof item === "string");
+	}
+
+	if (typeof value === "string") {
+		return [value];
+	}
+
+	return [];
+}
+
+function optionalString(value: unknown): string | undefined {
+	return typeof value === "string" ? value : undefined;
+}
+
+function normalizeDatabaseError(
+	metadata: DatabaseOperation,
+	cause: unknown,
+): DatabaseError {
+	if (DatabaseError.isDatabaseError(cause)) {
+		return cause;
+	}
+
+	const base = { ...metadataFields(metadata), cause };
+
+	if (cause instanceof Prisma.PrismaClientKnownRequestError) {
+		switch (cause.code) {
+			case "P2002":
+				return new UniqueConstraintViolation({
+					...base,
+					constraint: optionalString(cause.meta?.constraint),
+					fields: stringArray(cause.meta?.target),
+				});
+			case "P2003":
+				return new ForeignKeyConstraintViolation({
+					...base,
+					constraint: optionalString(cause.meta?.constraint),
+					fields: stringArray(cause.meta?.field_name),
+				});
+			case "P2024":
+				return new QueryTimedOut(base);
+			case "P2025":
+				return new RecordRequiredButMissing(base);
+			case "P2034":
+				return new TransactionWriteConflict(base);
+			default:
+				return new UnexpectedDatabaseError(base);
+		}
+	}
+
+	if (cause instanceof Prisma.PrismaClientInitializationError) {
+		return new ConnectionUnavailable(base);
+	}
+
+	if (cause instanceof Prisma.PrismaClientValidationError) {
+		return new DatabaseValidationError(base);
+	}
+
+	return new UnexpectedDatabaseError(base);
+}
+
+function isPrismaDatabaseFailure(cause: unknown): boolean {
+	return (
+		cause instanceof Prisma.PrismaClientKnownRequestError ||
+		cause instanceof Prisma.PrismaClientInitializationError ||
+		cause instanceof Prisma.PrismaClientValidationError ||
+		cause instanceof Prisma.PrismaClientUnknownRequestError ||
+		cause instanceof Prisma.PrismaClientRustPanicError
+	);
+}
+
+function runOperation<Client extends OperationClient, A>(
+	client: Client,
+	metadata: DatabaseOperation,
+	operation: (client: Client) => PromiseLike<A>,
+) {
+	return Effect.tryPromise({
+		try: () => operation(client),
+		catch: (cause) => normalizeDatabaseError(metadata, cause),
+	});
+}
+
+function transactionContext(
+	client: Prisma.TransactionClient,
+): TransactionContext {
+	return {
+		client,
+		query: (metadata, operation) => runOperation(client, metadata, operation),
+		mutation: (metadata, operation) =>
+			runOperation(client, metadata, operation),
+	};
+}
+
+function shouldRetryTransaction(error: DatabaseError | unknown): boolean {
+	return (
+		DatabaseError.isDatabaseError(error) && DatabaseError.isRetryable(error)
+	);
+}
+
+function normalizeTransactionFailure<E>(
+	metadata: DatabaseOperation,
+	cause: unknown,
+): E | DatabaseError {
+	if (DatabaseError.isDatabaseError(cause)) {
+		return cause;
+	}
+
+	if (!isPrismaDatabaseFailure(cause)) {
+		return cause as E;
+	}
+
+	return normalizeDatabaseError(metadata, cause);
+}
+
+function withTransactionRetries<A, E>(
+	effect: Effect.Effect<A, E | DatabaseError>,
+	retries: number,
+): Effect.Effect<A, E | DatabaseError> {
+	return effect.pipe(
+		Effect.catchIf(
+			() => true,
+			(error) => {
+				if (retries > 0 && shouldRetryTransaction(error)) {
+					return withTransactionRetries(effect, retries - 1);
+				}
+
+				return Effect.fail(error);
+			},
+		),
+	);
+}
+
+export function makeDatabaseService(client: PrismaClient): Database["Service"] {
+	const database: Database["Service"] = {
+		client,
+		query: (metadata, operation) => runOperation(client, metadata, operation),
+		mutation: (metadata, operation) =>
+			runOperation(client, metadata, operation),
+		transaction: <A, E>(
+			metadata: DatabaseOperation,
+			operation: (
+				transaction: TransactionContext,
+			) => Effect.Effect<A, E | DatabaseError>,
+			options?: TransactionOptions,
+		) => {
+			const transaction = Effect.tryPromise({
+				try: () =>
+					client.$transaction((transactionClient) =>
+						Effect.runPromise(operation(transactionContext(transactionClient))),
+					),
+				catch: (cause) => normalizeTransactionFailure<E>(metadata, cause),
+			});
+
+			return withTransactionRetries(transaction, options?.retries ?? 0);
+		},
+	};
+
+	return database;
+}
+
 export const PrismaServiceLive = Layer.effect(
 	PrismaService,
 	Effect.acquireRelease(acquirePrismaClient, ({ client }) =>
 		Effect.promise(() => client.$disconnect()).pipe(Effect.orDie),
 	),
 );
+
+export const DatabaseLive = Layer.effect(
+	Database,
+	Effect.gen(function* () {
+		const prisma = yield* PrismaService;
+
+		return makeDatabaseService(prisma.client);
+	}),
+).pipe(Layer.provide(PrismaServiceLive));
