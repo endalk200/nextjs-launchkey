@@ -4,6 +4,7 @@
 	"type": "module",
 	"private": true,
 	"dependencies": {
+		"@app/database": "*",
 		"@app/post": "*",
 		"@app/ui": "*",
 		"@effect/opentelemetry": "4.0.0-beta.69",

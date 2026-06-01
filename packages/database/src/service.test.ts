@@ -2,14 +2,14 @@ import { Effect } from "effect";
 import { afterEach, describe, expect, it } from "vitest";
 import {
 	DatabaseConfigurationError,
-	PrismaLive,
+	PrismaServiceLive,
 	PrismaService,
 } from "./service.ts";
 
 const originalDatabaseUrl = process.env.DATABASE_URL;
 
 function acquirePrismaService() {
-	return Effect.runPromise(Effect.provide(PrismaService, PrismaLive));
+	return Effect.runPromise(Effect.provide(PrismaService, PrismaServiceLive));
 }
 
 describe("PrismaLive", () => {

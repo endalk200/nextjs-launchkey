@@ -66,7 +66,7 @@ const acquirePrismaClient = readDatabaseUrl.pipe(
 	),
 );
 
-export const PrismaLive = Layer.effect(
+export const PrismaServiceLive = Layer.effect(
 	PrismaService,
 	Effect.acquireRelease(acquirePrismaClient, ({ client }) =>
 		Effect.promise(() => client.$disconnect()).pipe(Effect.orDie),

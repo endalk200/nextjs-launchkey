@@ -2,5 +2,5 @@ export {
 	DatabaseConfigurationError,
 	DatabaseConnectionError,
 	PrismaService,
-	PrismaLive,
+	PrismaServiceLive,
 } from "./service.ts";
