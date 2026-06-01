@@ -3,7 +3,7 @@
 import { Effect, Layer, ManagedRuntime, Scope } from "effect";
 import { FetchHttpClient } from "effect/unstable/http";
 import { RpcClient, RpcSerialization } from "effect/unstable/rpc";
-import { PostRpcs } from "../server/rpc.ts";
+import { PostRpcs } from "../server/rpc.defnition.ts";
 
 type CreatePostInput = {
 	readonly title: string;

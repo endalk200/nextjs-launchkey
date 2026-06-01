@@ -1,4 +1,9 @@
-import { PrismaLive, PrismaService } from "@app/database";
+import {
+	Database,
+	DatabaseLive,
+	TransactionWriteConflict,
+	UnexpectedDatabaseError,
+} from "@app/database";
 import {
 	PostgreSqlContainer,
 	type StartedPostgreSqlContainer,
@@ -7,13 +12,18 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { Effect, Layer } from "effect";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import { PostNotFoundError } from "../model/errors.ts";
+import {
+	PostNotFoundError,
+	PostOperationFailedError,
+} from "../model/errors.ts";
 import { Post } from "../model/post.ts";
 import { PostRepository, PostRepositoryLive } from "./post.repository.ts";
 
 let container: StartedPostgreSqlContainer;
 const rootDirectory = fileURLToPath(new URL("../../../../..", import.meta.url));
 const describeWithDocker = hasDockerRuntime() ? describe : describe.skip;
+
+const fakeDatabaseClient = {} as Database["Service"]["client"];
 
 function hasDockerRuntime() {
 	try {
@@ -26,13 +36,120 @@ function hasDockerRuntime() {
 
 function runRepository<A, E>(effect: Effect.Effect<A, E, PostRepository>) {
 	return Effect.runPromise(
-		Effect.provide(effect, PostRepositoryLive.pipe(Layer.provide(PrismaLive))),
+		Effect.provide(
+			effect,
+			PostRepositoryLive.pipe(Layer.provide(DatabaseLive)),
+		),
 	);
 }
 
-function runWithPrisma<A, E>(effect: Effect.Effect<A, E, PrismaService>) {
-	return Effect.runPromise(Effect.provide(effect, PrismaLive));
+function runWithDatabase<A, E>(effect: Effect.Effect<A, E, Database>) {
+	return Effect.runPromise(Effect.provide(effect, DatabaseLive));
 }
+
+function runRepositoryWithDatabase<A, E>(
+	database: Database["Service"],
+	effect: Effect.Effect<A, E, PostRepository>,
+) {
+	return Effect.runPromise(
+		Effect.provide(
+			effect,
+			PostRepositoryLive.pipe(Layer.provide(Layer.succeed(Database, database))),
+		),
+	);
+}
+
+describe("PostRepositoryLive database error translation", () => {
+	it("maps unexpected database failures to PostOperationFailed", async () => {
+		const database = Database.of({
+			client: fakeDatabaseClient,
+			query: (metadata) =>
+				Effect.fail(
+					new UnexpectedDatabaseError({
+						operation: metadata.operation,
+						model: metadata.model,
+						cause: new Error("database failed"),
+					}),
+				),
+			mutation: (metadata) =>
+				Effect.fail(
+					new UnexpectedDatabaseError({
+						operation: metadata.operation,
+						model: metadata.model,
+						cause: new Error("database failed"),
+					}),
+				),
+			transaction: (metadata) =>
+				Effect.fail(
+					new UnexpectedDatabaseError({
+						operation: metadata.operation,
+						model: metadata.model,
+						cause: new Error("database failed"),
+					}),
+				),
+		});
+
+		await expect(
+			runRepositoryWithDatabase(
+				database,
+				Effect.gen(function* () {
+					const repo = yield* PostRepository;
+
+					return yield* repo.list;
+				}),
+			),
+		).rejects.toMatchObject({
+			_tag: "PostOperationFailed",
+			operation: "Post.List",
+			retryable: false,
+		});
+	});
+
+	it("marks retryable database failures as retryable PostOperationFailed", async () => {
+		const database = Database.of({
+			client: fakeDatabaseClient,
+			query: (metadata) =>
+				Effect.fail(
+					new TransactionWriteConflict({
+						operation: metadata.operation,
+						model: metadata.model,
+						cause: new Error("write conflict"),
+					}),
+				),
+			mutation: (metadata) =>
+				Effect.fail(
+					new TransactionWriteConflict({
+						operation: metadata.operation,
+						model: metadata.model,
+						cause: new Error("write conflict"),
+					}),
+				),
+			transaction: (metadata) =>
+				Effect.fail(
+					new TransactionWriteConflict({
+						operation: metadata.operation,
+						model: metadata.model,
+						cause: new Error("write conflict"),
+					}),
+				),
+		});
+
+		await expect(
+			runRepositoryWithDatabase(
+				database,
+				Effect.gen(function* () {
+					const repo = yield* PostRepository;
+
+					return yield* repo.create("First post", "First body");
+				}),
+			),
+		).rejects.toMatchObject({
+			_tag: "PostOperationFailed",
+			operation: "Post.Create",
+			retryable: true,
+		});
+	});
+});
 
 describeWithDocker("PostRepoPrismaLive", () => {
 	beforeAll(async () => {
@@ -56,15 +173,19 @@ describeWithDocker("PostRepoPrismaLive", () => {
 	});
 
 	beforeEach(async () => {
-		await runWithPrisma(
+		await runWithDatabase(
 			Effect.gen(function* () {
-				const prisma = yield* PrismaService;
+				const database = yield* Database;
 
-				yield* Effect.tryPromise(() =>
-					prisma.client.$executeRawUnsafe(
-						'TRUNCATE TABLE "posts" RESTART IDENTITY CASCADE',
-					),
-				).pipe(Effect.orDie);
+				yield* database
+					.mutation(
+						{ operation: "PostTest.Truncate", model: "Post" },
+						(client) =>
+							client.$executeRawUnsafe(
+								'TRUNCATE TABLE "posts" RESTART IDENTITY CASCADE',
+							),
+					)
+					.pipe(Effect.orDie);
 			}),
 		);
 	});

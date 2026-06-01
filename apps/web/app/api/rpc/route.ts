@@ -1,4 +1,4 @@
-import { PrismaServiceLive } from "@app/database";
+import { DatabaseLive } from "@app/database";
 import {
 	PostHandlers,
 	PostOperationsLive,
@@ -29,7 +29,7 @@ const ServerLayer = RpcServer.layerHttp({
 	Layer.provide(AppHandlers),
 	Layer.provide(AppOperations),
 	Layer.provide(AppRepositories),
-	Layer.provide(PrismaServiceLive),
+	Layer.provide(DatabaseLive),
 	Layer.provide(RpcSerialization.layerJson),
 	Layer.provideMerge(OtelLive),
 );
