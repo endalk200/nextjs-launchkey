@@ -174,6 +174,78 @@ describe("Database", () => {
 		});
 	});
 
+	it("maps Prisma connection request errors as connection unavailable", async () => {
+		const database = makeDatabaseService({} as PrismaClient);
+
+		await expect(
+			Effect.runPromise(
+				database.query({ operation: "Post.List", model: "Post" }, () =>
+					Promise.reject(knownRequestError("P1001")),
+				),
+			),
+		).rejects.toMatchObject({
+			_tag: "ConnectionUnavailable",
+			operation: "Post.List",
+			model: "Post",
+		});
+	});
+
+	it("maps Prisma known request network errors as connection unavailable", async () => {
+		const database = makeDatabaseService({} as PrismaClient);
+
+		await expect(
+			Effect.runPromise(
+				database.query({ operation: "Post.List", model: "Post" }, () =>
+					Promise.reject(knownRequestError("ECONNREFUSED")),
+				),
+			),
+		).rejects.toMatchObject({
+			_tag: "ConnectionUnavailable",
+			operation: "Post.List",
+			model: "Post",
+		});
+	});
+
+	it("maps runtime Prisma connection loss as connection unavailable", async () => {
+		const database = makeDatabaseService({} as PrismaClient);
+
+		await expect(
+			Effect.runPromise(
+				database.mutation({ operation: "Post.Delete", model: "Post" }, () =>
+					Promise.reject(
+						new Prisma.PrismaClientUnknownRequestError(
+							"Connection terminated unexpectedly",
+							{ clientVersion: prismaClientVersion },
+						),
+					),
+				),
+			),
+		).rejects.toMatchObject({
+			_tag: "ConnectionUnavailable",
+			operation: "Post.Delete",
+			model: "Post",
+		});
+	});
+
+	it("maps driver network errors as connection unavailable", async () => {
+		const database = makeDatabaseService({} as PrismaClient);
+		const error = Object.assign(new Error("connect ECONNREFUSED 127.0.0.1"), {
+			code: "ECONNREFUSED",
+		});
+
+		await expect(
+			Effect.runPromise(
+				database.query({ operation: "Post.List", model: "Post" }, () =>
+					Promise.reject(error),
+				),
+			),
+		).rejects.toMatchObject({
+			_tag: "ConnectionUnavailable",
+			operation: "Post.List",
+			model: "Post",
+		});
+	});
+
 	it("maps Prisma validation errors without leaking Prisma control flow", async () => {
 		const database = makeDatabaseService({} as PrismaClient);
 

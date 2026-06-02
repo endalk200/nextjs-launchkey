@@ -136,6 +136,59 @@ function optionalString(value: unknown): string | undefined {
 	return typeof value === "string" ? value : undefined;
 }
 
+const connectionUnavailableCodes = new Set([
+	"P1000",
+	"P1001",
+	"P1002",
+	"P1017",
+	"ECONNREFUSED",
+	"ECONNRESET",
+	"ETIMEDOUT",
+	"ENOTFOUND",
+	"EPIPE",
+]);
+
+const connectionUnavailableMessageFragments = [
+	"can't reach database server",
+	"cannot reach database server",
+	"database server was closed",
+	"connection terminated",
+	"connection refused",
+	"connection reset",
+	"server closed the connection",
+	"terminating connection",
+];
+
+function errorMessage(cause: unknown): string {
+	if (cause instanceof Error) {
+		return cause.message;
+	}
+
+	return typeof cause === "string" ? cause : "";
+}
+
+function errorCode(cause: unknown): string | undefined {
+	return typeof cause === "object" &&
+		cause !== null &&
+		"code" in cause &&
+		typeof cause.code === "string"
+		? cause.code
+		: undefined;
+}
+
+function isConnectionUnavailableCause(cause: unknown): boolean {
+	const code = errorCode(cause);
+	if (code !== undefined && connectionUnavailableCodes.has(code)) {
+		return true;
+	}
+
+	const message = errorMessage(cause).toLowerCase();
+
+	return connectionUnavailableMessageFragments.some((fragment) =>
+		message.includes(fragment),
+	);
+}
+
 function normalizeDatabaseError(
 	metadata: DatabaseOperation,
 	cause: unknown,
@@ -145,6 +198,10 @@ function normalizeDatabaseError(
 	}
 
 	const base = { ...metadataFields(metadata), cause };
+
+	if (isConnectionUnavailableCause(cause)) {
+		return new ConnectionUnavailable(base);
+	}
 
 	if (cause instanceof Prisma.PrismaClientKnownRequestError) {
 		switch (cause.code) {
@@ -175,6 +232,13 @@ function normalizeDatabaseError(
 		return new ConnectionUnavailable(base);
 	}
 
+	if (
+		cause instanceof Prisma.PrismaClientUnknownRequestError &&
+		isConnectionUnavailableCause(cause)
+	) {
+		return new ConnectionUnavailable(base);
+	}
+
 	if (cause instanceof Prisma.PrismaClientValidationError) {
 		return new DatabaseValidationError(base);
 	}
@@ -200,7 +264,31 @@ function runOperation<Client extends OperationClient, A>(
 	return Effect.tryPromise({
 		try: () => operation(client),
 		catch: (cause) => normalizeDatabaseError(metadata, cause),
-	});
+	}).pipe(
+		Effect.tapError((error) =>
+			Effect.gen(function* () {
+				yield* Effect.annotateCurrentSpan({
+					"db.error_tag": error._tag,
+					"db.retryable": DatabaseError.isRetryable(error),
+				});
+
+				yield* Effect.logError("Database operation failed").pipe(
+					Effect.annotateLogs({
+						operation: metadata.operation,
+						model: metadata.model,
+						errorTag: error._tag,
+						retryable: DatabaseError.isRetryable(error),
+					}),
+				);
+			}),
+		),
+		Effect.withSpan(`Database.${metadata.operation}`, {
+			attributes: {
+				"db.operation": metadata.operation,
+				"db.model": metadata.model ?? "unknown",
+			},
+		}),
+	);
 }
 
 function transactionContext(
