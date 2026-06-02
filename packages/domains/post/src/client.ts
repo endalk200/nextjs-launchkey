@@ -1,2 +1,4 @@
-export * from "./client/hooks.ts";
-export * from "./ui/index.ts";
+/**
+ * Client entry point for the post domain UI.
+ */
+export { PostListController } from "./ui/controller.tsx";

@@ -3,7 +3,7 @@
 	"ui": "stream",
 	"tasks": {
 		"build": {
-			"dependsOn": ["^build"],
+			"dependsOn": ["^build", "db:generate"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"outputs": [".next/**", "!.next/cache/**"]
 		},
@@ -15,10 +15,17 @@
 			"cache": false
 		},
 		"check-types": {
-			"dependsOn": ["^check-types"]
+			"dependsOn": ["^check-types", "db:generate"]
 		},
 		"test": {
 			"dependsOn": ["^test"]
+		},
+		"test:integration": {
+			"dependsOn": ["^test:integration", "db:generate"],
+			"cache": false
+		},
+		"db:generate": {
+			"outputs": ["src/generated/**"]
 		},
 		"test:e2e": {
 			"dependsOn": ["build", "^build"],
@@ -33,6 +40,7 @@
 			"cache": false
 		},
 		"dev": {
+			"dependsOn": ["db:generate"],
 			"cache": false,
 			"persistent": true
 		}
