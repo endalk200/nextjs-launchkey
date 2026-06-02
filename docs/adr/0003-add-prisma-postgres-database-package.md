@@ -1,8 +1,8 @@
 # Add Prisma Postgres Database Package
 
-We use a dedicated `@app/database` workspace package for Prisma and PostgreSQL infrastructure. The package owns the Prisma schema, migration history, generated Prisma Client output, Prisma command scripts, and Effect `PrismaService`/`PrismaLive` layer.
+`@app/database` exposes `Database` and `DatabaseLive` as the primary persistence boundary instead of making consumers handle raw Prisma failures directly. The package provides `query`, `mutation`, and `transaction` helpers that convert Prisma/PostgreSQL failures into a shared, precise `DatabaseError` union with stable fields such as operation, optional model, affected fields, and original cause; domain packages translate those persistence failures into domain errors like `PostNotFoundError` or future conflict errors.
 
-Domain packages continue to own their repository contracts and domain-specific persistence adapters. `@app/database` only provides shared database infrastructure and the domain packages own repository implemenations and `*RepoPrismaLive`
+Domain packages continue to own their repository contracts and domain-specific persistence adapters. `@app/database` only provides shared database infrastructure and the domain packages own repository implementations and `*RepoPrismaLive`
 
 The application uses the Prisma-backed repository implementation with no runtime in-memory fallback. Missing, invalid, or non-Postgres `DATABASE_URL` values are application configuration failures. Local Prisma CLI workflows may provide development defaults, but application startup must require an explicit valid database URL.
 

@@ -256,6 +256,14 @@ function isPrismaDatabaseFailure(cause: unknown): boolean {
 	);
 }
 
+function causeFields(cause: unknown) {
+	return {
+		causeType: cause instanceof Error ? cause.constructor.name : typeof cause,
+		causeCode: errorCode(cause),
+		causeMessage: errorMessage(cause),
+	};
+}
+
 function runOperation<Client extends OperationClient, A>(
 	client: Client,
 	metadata: DatabaseOperation,
@@ -267,9 +275,14 @@ function runOperation<Client extends OperationClient, A>(
 	}).pipe(
 		Effect.tapError((error) =>
 			Effect.gen(function* () {
+				const fields = causeFields(error.cause);
+
 				yield* Effect.annotateCurrentSpan({
 					"db.error_tag": error._tag,
-					"db.retryable": DatabaseError.isRetryable(error),
+					"db.cause": error.cause,
+					"db.cause_type": fields.causeType,
+					"db.cause_code": fields.causeCode ?? "unknown",
+					"db.cause_message": fields.causeMessage,
 				});
 
 				yield* Effect.logError("Database operation failed").pipe(
@@ -278,6 +291,9 @@ function runOperation<Client extends OperationClient, A>(
 						model: metadata.model,
 						errorTag: error._tag,
 						retryable: DatabaseError.isRetryable(error),
+						causeType: fields.causeType,
+						causeCode: fields.causeCode,
+						causeMessage: fields.causeMessage,
 					}),
 				);
 			}),
