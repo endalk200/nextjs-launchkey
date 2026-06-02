@@ -1,6 +1,7 @@
 import {
 	Database,
 	DatabaseLive,
+	RecordRequiredButMissing,
 	TransactionWriteConflict,
 	UnexpectedDatabaseError,
 } from "@app/database";
@@ -12,12 +13,9 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { Effect, Layer } from "effect";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
-import {
-	PostNotFoundError,
-	PostOperationFailedError,
-} from "../model/errors.ts";
+import { PostNotFoundError } from "../model/errors.ts";
 import { Post } from "../model/post.ts";
-import { PostRepository, PostRepositoryLive } from "./post.repository.ts";
+import { PostRepository, PostRepositoryPrisma } from "./post.repository.ts";
 
 let container: StartedPostgreSqlContainer;
 const rootDirectory = fileURLToPath(new URL("../../../../..", import.meta.url));
@@ -38,7 +36,7 @@ function runRepository<A, E>(effect: Effect.Effect<A, E, PostRepository>) {
 	return Effect.runPromise(
 		Effect.provide(
 			effect,
-			PostRepositoryLive.pipe(Layer.provide(DatabaseLive)),
+			PostRepositoryPrisma.pipe(Layer.provide(DatabaseLive)),
 		),
 	);
 }
@@ -54,13 +52,15 @@ function runRepositoryWithDatabase<A, E>(
 	return Effect.runPromise(
 		Effect.provide(
 			effect,
-			PostRepositoryLive.pipe(Layer.provide(Layer.succeed(Database, database))),
+			PostRepositoryPrisma.pipe(
+				Layer.provide(Layer.succeed(Database, database)),
+			),
 		),
 	);
 }
 
-describe("PostRepositoryLive database error translation", () => {
-	it("maps unexpected database failures to PostOperationFailed", async () => {
+describe("PostRepositoryLive database errors", () => {
+	it("propagates unexpected database failures", async () => {
 		const database = Database.of({
 			client: fakeDatabaseClient,
 			query: (metadata) =>
@@ -99,13 +99,12 @@ describe("PostRepositoryLive database error translation", () => {
 				}),
 			),
 		).rejects.toMatchObject({
-			_tag: "PostOperationFailed",
+			_tag: "UnexpectedDatabaseError",
 			operation: "Post.List",
-			retryable: false,
 		});
 	});
 
-	it("marks retryable database failures as retryable PostOperationFailed", async () => {
+	it("propagates retryable database failures", async () => {
 		const database = Database.of({
 			client: fakeDatabaseClient,
 			query: (metadata) =>
@@ -144,9 +143,8 @@ describe("PostRepositoryLive database error translation", () => {
 				}),
 			),
 		).rejects.toMatchObject({
-			_tag: "PostOperationFailed",
+			_tag: "TransactionWriteConflict",
 			operation: "Post.Create",
-			retryable: true,
 		});
 	});
 });
@@ -181,9 +179,7 @@ describeWithDocker("PostRepoPrismaLive", () => {
 					.mutation(
 						{ operation: "PostTest.Truncate", model: "Post" },
 						(client) =>
-							client.$executeRawUnsafe(
-								'TRUNCATE TABLE "posts" RESTART IDENTITY CASCADE',
-							),
+							client.$executeRawUnsafe('TRUNCATE TABLE "posts" CASCADE'),
 					)
 					.pipe(Effect.orDie);
 			}),
@@ -247,7 +243,7 @@ describeWithDocker("PostRepoPrismaLive", () => {
 		expect(result.list).toEqual([]);
 	});
 
-	it("returns PostNotFound when updating a missing post", async () => {
+	it("returns RecordRequiredButMissing when updating a missing post", async () => {
 		await expect(
 			runRepository(
 				Effect.gen(function* () {
@@ -260,7 +256,7 @@ describeWithDocker("PostRepoPrismaLive", () => {
 					);
 				}),
 			),
-		).rejects.toBeInstanceOf(PostNotFoundError);
+		).rejects.toBeInstanceOf(RecordRequiredButMissing);
 	});
 
 	it("returns PostNotFound when deleting a missing post", async () => {

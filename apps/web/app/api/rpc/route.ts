@@ -2,7 +2,7 @@ import { DatabaseLive } from "@app/database";
 import {
 	PostHandlers,
 	PostOperationsLive,
-	PostRepoPrismaLive,
+	PostRepositoryPrisma,
 	PostRpcs,
 } from "@app/post/server";
 import { context, isSpanContextValid, trace } from "@opentelemetry/api";
@@ -19,7 +19,7 @@ const AppHandlers = PostHandlers;
 
 const AppOperations = PostOperationsLive;
 
-const AppRepositories = PostRepoPrismaLive;
+const AppRepositories = PostRepositoryPrisma;
 
 const ServerLayer = RpcServer.layerHttp({
 	group: AppRpcs,

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { PostNotFoundError } from "../model/errors.ts";
 import { Post } from "../model/post.ts";
 import { PostRepository } from "./post.repository.ts";
-import { PostOperationsLive, PostService } from "./service.ts";
+import { PostOperationsLive, PostService } from "./post.service.ts";
 
 const post = new Post({
 	id: "00000000-0000-0000-0000-000000000001",
@@ -11,7 +11,7 @@ const post = new Post({
 	content: "First body",
 });
 
-const FakePostRepositoryLive = Layer.succeed(
+const MockPostRepositoryLive = Layer.succeed(
 	PostRepository,
 	PostRepository.of({
 		list: Effect.succeed([post]),
@@ -44,7 +44,7 @@ const FakePostRepositoryLive = Layer.succeed(
 
 function runPostService<A, E>(
 	effect: Effect.Effect<A, E, PostService>,
-	repositoryLayer = FakePostRepositoryLive,
+	repositoryLayer = MockPostRepositoryLive,
 ) {
 	return Effect.runPromise(
 		Effect.provide(
@@ -133,6 +133,7 @@ describe("PostOperationsLive", () => {
 			id: "00000000-0000-0000-0000-000000000009",
 			message: "Post not found",
 		});
+
 		const failingRepositoryLayer = Layer.succeed(
 			PostRepository,
 			PostRepository.of({

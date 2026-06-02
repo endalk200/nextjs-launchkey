@@ -3,9 +3,9 @@ import { RpcTest } from "effect/unstable/rpc";
 import { describe, expect, it } from "vitest";
 import { PostNotFoundError } from "../model/errors.ts";
 import { Post } from "../model/post.ts";
-import { PostService } from "./service.ts";
-import { PostHandlers } from "./rpc.handler.ts";
-import { PostRpcs } from "./rpc.defnition.ts";
+import { PostService } from "./post.service.ts";
+import { PostRpcs } from "./post.rpc.definition.ts";
+import { PostHandlers } from "./post.rpc.handler.ts";
 
 const existingPost = new Post({
 	id: "00000000-0000-0000-0000-000000000001",

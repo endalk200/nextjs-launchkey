@@ -1,3 +1,4 @@
+import { DatabaseError } from "@app/database";
 import { Context, Effect, Layer } from "effect";
 import type { Post } from "../model/post.ts";
 import {
@@ -17,7 +18,7 @@ type UpdatePostInput = {
 	readonly content: string;
 };
 
-export class PostService extends Context.Service<
+class PostService extends Context.Service<
 	PostService,
 	{
 		readonly list: Effect.Effect<ReadonlyArray<Post>, PostOperationFailedError>;
@@ -33,14 +34,24 @@ export class PostService extends Context.Service<
 	}
 >()("app/PostOperations") {}
 
-export const PostOperationsLive = Layer.effect(
+const PostOperationsLive = Layer.effect(
 	PostService,
 	Effect.gen(function* () {
 		const repo = yield* PostRepository;
 
-		return {
+		return PostService.of({
 			list: Effect.fn("PostService.List")(function* () {
-				const posts = yield* repo.list;
+				const posts = yield* repo.list.pipe(
+					Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
+						Effect.fail(
+							new PostOperationFailedError({
+								operation: "Post.List",
+								message: "Something went wrong while fetching posts",
+								retryable: DatabaseError.isRetryable(error),
+							}),
+						),
+					),
+				);
 
 				yield* Effect.annotateCurrentSpan({ count: posts.length });
 
@@ -53,7 +64,17 @@ export const PostOperationsLive = Layer.effect(
 
 			create: ({ title, content }) =>
 				Effect.fn("PostService.Create")(function* () {
-					const post = yield* repo.create(title, content);
+					const post = yield* repo.create(title, content).pipe(
+						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
+							Effect.fail(
+								new PostOperationFailedError({
+									operation: "Post.Create",
+									message: "Something went wrong while creating a post",
+									retryable: DatabaseError.isRetryable(error),
+								}),
+							),
+						),
+					);
 
 					yield* Effect.annotateCurrentSpan({ id: post.id });
 
@@ -66,7 +87,17 @@ export const PostOperationsLive = Layer.effect(
 
 			delete: (id) =>
 				Effect.fn("PostService.Delete")(function* () {
-					const post = yield* repo.delete(id);
+					const post = yield* repo.delete(id).pipe(
+						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
+							Effect.fail(
+								new PostOperationFailedError({
+									operation: "Post.Delete",
+									message: "Something went wrong while deleting a post",
+									retryable: DatabaseError.isRetryable(error),
+								}),
+							),
+						),
+					);
 
 					yield* Effect.annotateCurrentSpan({ id: post.id });
 
@@ -79,7 +110,34 @@ export const PostOperationsLive = Layer.effect(
 
 			update: ({ id, title, content }) =>
 				Effect.fn("PostService.Update")(function* () {
-					const post = yield* repo.update(id, title, content);
+					const post = yield* repo.update(id, title, content).pipe(
+						Effect.catchIf(
+							DatabaseError.isDatabaseError,
+							(
+								error,
+							): Effect.Effect<
+								never,
+								PostOperationFailedError | PostNotFoundError
+							> => {
+								if (error._tag === "RecordRequiredButMissing") {
+									return Effect.fail(
+										new PostNotFoundError({
+											id,
+											message: "Post not found",
+										}),
+									);
+								}
+
+								return Effect.fail(
+									new PostOperationFailedError({
+										operation: "Post.Update",
+										message: "Something went wrong while updating a post",
+										retryable: DatabaseError.isRetryable(error),
+									}),
+								);
+							},
+						),
+					);
 
 					yield* Effect.annotateCurrentSpan({ id: post.id });
 
@@ -89,6 +147,8 @@ export const PostOperationsLive = Layer.effect(
 
 					return post;
 				})(),
-		};
+		});
 	}),
 );
+
+export { PostService, PostOperationsLive };

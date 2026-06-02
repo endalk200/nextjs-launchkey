@@ -1,8 +1,8 @@
 import { Effect } from "effect";
-import { PostService } from "./service.ts";
-import { PostRpcs } from "./rpc.defnition.ts";
+import { PostRpcs } from "./post.rpc.definition.ts";
+import { PostService } from "./post.service.ts";
 
-export const PostHandlers = PostRpcs.toLayer(
+const PostHandlers = PostRpcs.toLayer(
 	Effect.gen(function* () {
 		const posts = yield* PostService;
 
@@ -37,3 +37,5 @@ export const PostHandlers = PostRpcs.toLayer(
 		});
 	}),
 );
+
+export { PostHandlers };

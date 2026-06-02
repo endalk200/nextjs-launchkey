@@ -1,11 +1,11 @@
-import { Rpc, RpcGroup } from "effect/unstable/rpc";
-import { Post } from "../model/post.ts";
 import { Schema } from "effect";
+import { Rpc, RpcGroup } from "effect/unstable/rpc";
 
 import {
 	PostNotFoundError,
 	PostOperationFailedError,
 } from "../model/errors.ts";
+import { Post } from "../model/post.ts";
 
 const PostId = Schema.String.check(Schema.isUUID());
 
@@ -21,7 +21,7 @@ class ListPostsRPC extends Rpc.make("Post.List", {
 	error: Schema.Union([PostNotFoundError, PostOperationFailedError]),
 }) {}
 
-export class CreatePostRPC extends Rpc.make("Post.Create", {
+class CreatePostRPC extends Rpc.make("Post.Create", {
 	payload: Schema.Struct({
 		title: requiredString("Title"),
 		content: requiredString("Content"),
@@ -48,9 +48,11 @@ class UpdatePostRPC extends Rpc.make("Post.Update", {
 	error: Schema.Union([PostNotFoundError, PostOperationFailedError]),
 }) {}
 
-export class PostRpcs extends RpcGroup.make(
+class PostRpcs extends RpcGroup.make(
 	ListPostsRPC,
 	CreatePostRPC,
 	DeletePostRPC,
 	UpdatePostRPC,
 ) {}
+
+export { PostRpcs };
