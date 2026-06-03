@@ -16,12 +16,12 @@ const requiredString = (label: string) =>
 		),
 	);
 
-class ListPostsRPC extends Rpc.make("Post.List", {
+export class ListPostsRPC extends Rpc.make("Post.List", {
 	success: Schema.Array(Post),
 	error: Schema.Union([PostNotFoundError, PostOperationFailedError]),
 }) {}
 
-class CreatePostRPC extends Rpc.make("Post.Create", {
+export class CreatePostRPC extends Rpc.make("Post.Create", {
 	payload: Schema.Struct({
 		title: requiredString("Title"),
 		content: requiredString("Content"),
@@ -30,7 +30,7 @@ class CreatePostRPC extends Rpc.make("Post.Create", {
 	error: Schema.Union([PostNotFoundError, PostOperationFailedError]),
 }) {}
 
-class DeletePostRPC extends Rpc.make("Post.Delete", {
+export class DeletePostRPC extends Rpc.make("Post.Delete", {
 	payload: Schema.Struct({
 		id: PostId,
 	}),
@@ -38,7 +38,7 @@ class DeletePostRPC extends Rpc.make("Post.Delete", {
 	error: Schema.Union([PostNotFoundError, PostOperationFailedError]),
 }) {}
 
-class UpdatePostRPC extends Rpc.make("Post.Update", {
+export class UpdatePostRPC extends Rpc.make("Post.Update", {
 	payload: Schema.Struct({
 		id: PostId,
 		title: requiredString("Title"),

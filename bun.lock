@@ -69,6 +69,7 @@
       "devDependencies": {
         "@app/biome-config": "^",
         "@app/typescript-config": "*",
+        "@effect/vitest": "4.0.0-beta.69",
         "@types/node": "^22.15.3",
         "@types/pg": "^8.15.6",
         "prisma": "7.8.0",
@@ -90,6 +91,7 @@
       "devDependencies": {
         "@app/biome-config": "^",
         "@app/typescript-config": "*",
+        "@effect/vitest": "4.0.0-beta.69",
         "@testcontainers/postgresql": "12.0.1",
         "@testing-library/jest-dom": "^6.9.1",
         "@testing-library/react": "^16.3.2",
@@ -269,6 +271,8 @@
     "@ecies/ciphers": ["@ecies/ciphers@0.2.6", "", { "peerDependencies": { "@noble/ciphers": "^1.0.0" } }, "sha512-patgsRPKGkhhoBjETV4XxD0En4ui5fbX0hzayqI3M8tvNMGUoUvmyYAIWwlxBc1KX5cturfqByYdj5bYGRpN9g=="],
 
     "@effect/opentelemetry": ["@effect/opentelemetry@4.0.0-beta.69", "", { "peerDependencies": { "@opentelemetry/api": "^1.9", "@opentelemetry/api-logs": ">=0.203.0 <0.300.0", "@opentelemetry/resources": "^2.0.0", "@opentelemetry/sdk-logs": ">=0.203.0 <0.300.0", "@opentelemetry/sdk-metrics": "^2.0.0", "@opentelemetry/sdk-trace-base": "^2.0.0", "@opentelemetry/sdk-trace-node": "^2.0.0", "@opentelemetry/sdk-trace-web": "^2.0.0", "@opentelemetry/semantic-conventions": "^1.33.0", "effect": "^4.0.0-beta.69" }, "optionalPeers": ["@opentelemetry/api", "@opentelemetry/api-logs", "@opentelemetry/resources", "@opentelemetry/sdk-logs", "@opentelemetry/sdk-metrics", "@opentelemetry/sdk-trace-base", "@opentelemetry/sdk-trace-node", "@opentelemetry/sdk-trace-web"] }, "sha512-b5fdRaY+DmnLZ5CCplYEPrN/o4dibNhLBjLxXt6tYlAr3oNAZ1robJqZigTbuackPOp1Guz7UcxGZf3u72lHcw=="],
+
+    "@effect/vitest": ["@effect/vitest@4.0.0-beta.69", "", { "peerDependencies": { "effect": "^4.0.0-beta.69", "vitest": "^3.0.0 || ^4.0.0" } }, "sha512-tlsyoKJfNbyiSMwTkHMBGCGy0eq1dWucrX0eNmTkqlDZt+nU5xnMt18U+1KhCKq1cgzIE/CrBNlCyoOYILTlmA=="],
 
     "@electric-sql/pglite": ["@electric-sql/pglite@0.4.1", "", {}, "sha512-mZ9NzzUSYPOCnxHH1oAHPRzoMFJHY472raDKwXl/+6oPbpdJ7g8LsCN4FSaIIfkiCKHhb3iF/Zqo3NYxaIhU7Q=="],
 

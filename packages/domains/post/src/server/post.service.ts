@@ -111,31 +111,14 @@ const PostOperationsLive = Layer.effect(
 			update: ({ id, title, content }) =>
 				Effect.fn("PostService.Update")(function* () {
 					const post = yield* repo.update(id, title, content).pipe(
-						Effect.catchIf(
-							DatabaseError.isDatabaseError,
-							(
-								error,
-							): Effect.Effect<
-								never,
-								PostOperationFailedError | PostNotFoundError
-							> => {
-								if (error._tag === "RecordRequiredButMissing") {
-									return Effect.fail(
-										new PostNotFoundError({
-											id,
-											message: "Post not found",
-										}),
-									);
-								}
-
-								return Effect.fail(
-									new PostOperationFailedError({
-										operation: "Post.Update",
-										message: "Something went wrong while updating a post",
-										retryable: DatabaseError.isRetryable(error),
-									}),
-								);
-							},
+						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
+							Effect.fail(
+								new PostOperationFailedError({
+									operation: "Post.Update",
+									message: "Something went wrong while updating a post",
+									retryable: DatabaseError.isRetryable(error),
+								}),
+							),
 						),
 					);
 

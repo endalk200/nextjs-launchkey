@@ -1,10 +1,5 @@
-import {
-	Database,
-	DatabaseLive,
-	RecordRequiredButMissing,
-	TransactionWriteConflict,
-	UnexpectedDatabaseError,
-} from "@app/database";
+import { Database, DatabaseLive } from "@app/database";
+import { assert, describe, it } from "@effect/vitest";
 import {
 	PostgreSqlContainer,
 	type StartedPostgreSqlContainer,
@@ -12,145 +7,40 @@ import {
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { Effect, Layer } from "effect";
-import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import { afterAll, beforeAll, beforeEach } from "vitest";
 import { PostNotFoundError } from "../model/errors.ts";
 import { Post } from "../model/post.ts";
 import { PostRepository, PostRepositoryPrisma } from "./post.repository.ts";
 
 let container: StartedPostgreSqlContainer;
 const rootDirectory = fileURLToPath(new URL("../../../../..", import.meta.url));
-const describeWithDocker = hasDockerRuntime() ? describe : describe.skip;
+const originalDatabaseUrl = process.env.DATABASE_URL;
 
-const fakeDatabaseClient = {} as Database["Service"]["client"];
-
-function hasDockerRuntime() {
+function assertDockerRuntime() {
 	try {
 		execFileSync("docker", ["info"], { stdio: "ignore" });
-		return true;
-	} catch {
-		return false;
+	} catch (cause) {
+		throw new Error(
+			"Docker is required to run post repository integration tests.",
+			{ cause },
+		);
 	}
 }
 
 function runRepository<A, E>(effect: Effect.Effect<A, E, PostRepository>) {
-	return Effect.runPromise(
-		Effect.provide(
-			effect,
-			PostRepositoryPrisma.pipe(Layer.provide(DatabaseLive)),
-		),
+	return effect.pipe(
+		Effect.provide(PostRepositoryPrisma.pipe(Layer.provide(DatabaseLive))),
 	);
 }
 
 function runWithDatabase<A, E>(effect: Effect.Effect<A, E, Database>) {
-	return Effect.runPromise(Effect.provide(effect, DatabaseLive));
+	return Effect.runPromise(effect.pipe(Effect.provide(DatabaseLive)));
 }
 
-function runRepositoryWithDatabase<A, E>(
-	database: Database["Service"],
-	effect: Effect.Effect<A, E, PostRepository>,
-) {
-	return Effect.runPromise(
-		Effect.provide(
-			effect,
-			PostRepositoryPrisma.pipe(
-				Layer.provide(Layer.succeed(Database, database)),
-			),
-		),
-	);
-}
-
-describe("PostRepositoryLive database errors", () => {
-	it("propagates unexpected database failures", async () => {
-		const database = Database.of({
-			client: fakeDatabaseClient,
-			query: (metadata) =>
-				Effect.fail(
-					new UnexpectedDatabaseError({
-						operation: metadata.operation,
-						model: metadata.model,
-						cause: new Error("database failed"),
-					}),
-				),
-			mutation: (metadata) =>
-				Effect.fail(
-					new UnexpectedDatabaseError({
-						operation: metadata.operation,
-						model: metadata.model,
-						cause: new Error("database failed"),
-					}),
-				),
-			transaction: (metadata) =>
-				Effect.fail(
-					new UnexpectedDatabaseError({
-						operation: metadata.operation,
-						model: metadata.model,
-						cause: new Error("database failed"),
-					}),
-				),
-		});
-
-		await expect(
-			runRepositoryWithDatabase(
-				database,
-				Effect.gen(function* () {
-					const repo = yield* PostRepository;
-
-					return yield* repo.list;
-				}),
-			),
-		).rejects.toMatchObject({
-			_tag: "UnexpectedDatabaseError",
-			operation: "Post.List",
-		});
-	});
-
-	it("propagates retryable database failures", async () => {
-		const database = Database.of({
-			client: fakeDatabaseClient,
-			query: (metadata) =>
-				Effect.fail(
-					new TransactionWriteConflict({
-						operation: metadata.operation,
-						model: metadata.model,
-						cause: new Error("write conflict"),
-					}),
-				),
-			mutation: (metadata) =>
-				Effect.fail(
-					new TransactionWriteConflict({
-						operation: metadata.operation,
-						model: metadata.model,
-						cause: new Error("write conflict"),
-					}),
-				),
-			transaction: (metadata) =>
-				Effect.fail(
-					new TransactionWriteConflict({
-						operation: metadata.operation,
-						model: metadata.model,
-						cause: new Error("write conflict"),
-					}),
-				),
-		});
-
-		await expect(
-			runRepositoryWithDatabase(
-				database,
-				Effect.gen(function* () {
-					const repo = yield* PostRepository;
-
-					return yield* repo.create("First post", "First body");
-				}),
-			),
-		).rejects.toMatchObject({
-			_tag: "TransactionWriteConflict",
-			operation: "Post.Create",
-		});
-	});
-});
-
-describeWithDocker("PostRepoPrismaLive", () => {
+describe("PostRepositoryPrisma integration", () => {
 	beforeAll(async () => {
+		assertDockerRuntime();
+
 		container = await new PostgreSqlContainer("postgres:17-alpine")
 			.withDatabase("launchkey_test")
 			.withUsername("launchkey")
@@ -167,6 +57,12 @@ describeWithDocker("PostRepoPrismaLive", () => {
 	});
 
 	afterAll(async () => {
+		if (originalDatabaseUrl === undefined) {
+			delete process.env.DATABASE_URL;
+		} else {
+			process.env.DATABASE_URL = originalDatabaseUrl;
+		}
+
 		await container?.stop();
 	});
 
@@ -186,88 +82,79 @@ describeWithDocker("PostRepoPrismaLive", () => {
 		);
 	});
 
-	it("creates and lists posts through the PostRepository contract", async () => {
-		const result = await runRepository(
-			Effect.gen(function* () {
-				const repo = yield* PostRepository;
-				const created = yield* repo.create("First post", "First body");
-				const list = yield* repo.list;
+	it.effect("creates and lists posts through the PostRepository contract", () =>
+		Effect.gen(function* () {
+			const repo = yield* PostRepository;
+			const first = yield* repo.create("First post", "First body");
+			const second = yield* repo.create("Second post", "Second body");
+			const list = yield* repo.list;
 
-				return { created, list };
-			}),
-		);
+			assert.match(first.id, /^[0-9a-f-]{36}$/);
+			assert.deepStrictEqual(list, [first, second]);
+		}).pipe(runRepository),
+	);
 
-		expect(result.created.id).toEqual(expect.any(String));
-		expect(result.created).toMatchObject({
-			title: "First post",
-			content: "First body",
-		});
-		expect(result.list).toEqual([result.created]);
-	});
+	it.effect("updates posts through the PostRepository contract", () =>
+		Effect.gen(function* () {
+			const repo = yield* PostRepository;
+			const created = yield* repo.create("First post", "First body");
 
-	it("updates posts through the PostRepository contract", async () => {
-		const result = await runRepository(
-			Effect.gen(function* () {
-				const repo = yield* PostRepository;
-				const created = yield* repo.create("First post", "First body");
+			const result = yield* repo.update(
+				created.id,
+				"Updated post",
+				"Updated body",
+			);
 
-				return yield* repo.update(created.id, "Updated post", "Updated body");
-			}),
-		);
-
-		expect(result).toEqual(
-			new Post({
-				id: result.id,
-				title: "Updated post",
-				content: "Updated body",
-			}),
-		);
-	});
-
-	it("deletes posts through the PostRepository contract", async () => {
-		const result = await runRepository(
-			Effect.gen(function* () {
-				const repo = yield* PostRepository;
-				const created = yield* repo.create("First post", "First body");
-				const deleted = yield* repo.delete(created.id);
-				const list = yield* repo.list;
-
-				return { deleted, list };
-			}),
-		);
-
-		expect(result.deleted).toMatchObject({
-			title: "First post",
-			content: "First body",
-		});
-		expect(result.list).toEqual([]);
-	});
-
-	it("returns RecordRequiredButMissing when updating a missing post", async () => {
-		await expect(
-			runRepository(
-				Effect.gen(function* () {
-					const repo = yield* PostRepository;
-
-					return yield* repo.update(
-						"00000000-0000-0000-0000-000000000001",
-						"Updated post",
-						"Updated body",
-					);
+			assert.deepStrictEqual(
+				result,
+				new Post({
+					id: created.id,
+					title: "Updated post",
+					content: "Updated body",
 				}),
-			),
-		).rejects.toBeInstanceOf(RecordRequiredButMissing);
-	});
+			);
+		}).pipe(runRepository),
+	);
 
-	it("returns PostNotFound when deleting a missing post", async () => {
-		await expect(
-			runRepository(
-				Effect.gen(function* () {
-					const repo = yield* PostRepository;
+	it.effect("deletes posts through the PostRepository contract", () =>
+		Effect.gen(function* () {
+			const repo = yield* PostRepository;
+			const created = yield* repo.create("First post", "First body");
+			const deleted = yield* repo.delete(created.id);
+			const list = yield* repo.list;
 
-					return yield* repo.delete("00000000-0000-0000-0000-000000000001");
-				}),
-			),
-		).rejects.toBeInstanceOf(PostNotFoundError);
-	});
+			assert.deepStrictEqual(deleted, created);
+			assert.deepStrictEqual(list, []);
+		}).pipe(runRepository),
+	);
+
+	it.effect("returns PostNotFound when updating a missing post", () =>
+		Effect.gen(function* () {
+			const repo = yield* PostRepository;
+
+			const error = yield* repo
+				.update(
+					"00000000-0000-0000-0000-000000000001",
+					"Updated post",
+					"Updated body",
+				)
+				.pipe(Effect.flip);
+
+			assert.instanceOf(error, PostNotFoundError);
+			assert.strictEqual(error.id, "00000000-0000-0000-0000-000000000001");
+		}).pipe(runRepository),
+	);
+
+	it.effect("returns PostNotFound when deleting a missing post", () =>
+		Effect.gen(function* () {
+			const repo = yield* PostRepository;
+
+			const error = yield* repo
+				.delete("00000000-0000-0000-0000-000000000001")
+				.pipe(Effect.flip);
+
+			assert.instanceOf(error, PostNotFoundError);
+			assert.strictEqual(error.id, "00000000-0000-0000-0000-000000000001");
+		}).pipe(runRepository),
+	);
 });

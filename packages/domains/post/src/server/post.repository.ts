@@ -92,14 +92,25 @@ const PostRepositoryPrisma = Layer.effect(
 
 			update: (id, title, content) =>
 				Effect.fn("PostRepository.Update")(function* () {
-					const record = yield* database.mutation(
-						{ operation: "Post.Update", model: "Post" },
-						(client) =>
+					const record = yield* database
+						.mutation({ operation: "Post.Update", model: "Post" }, (client) =>
 							client.post.update({
 								where: { id },
 								data: { title, content },
 							}),
-					);
+						)
+						.pipe(
+							Effect.catchIf(
+								(error) => error._tag === "RecordRequiredButMissing",
+								() =>
+									Effect.fail(
+										new PostNotFoundError({
+											id,
+											message: "Post not found",
+										}),
+									),
+							),
+						);
 
 					const post = new Post({
 						id: record.id,
