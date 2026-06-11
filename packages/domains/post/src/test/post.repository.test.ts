@@ -10,7 +10,10 @@ import { Effect, Layer } from "effect";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { PostNotFoundError } from "../model/errors.ts";
 import { Post } from "../model/post.ts";
-import { PostRepository, PostRepositoryPrisma } from "./post.repository.ts";
+import {
+	PostRepository,
+	PostRepositoryPrisma,
+} from "../server/post.repository.ts";
 
 let container: StartedPostgreSqlContainer;
 const rootDirectory = fileURLToPath(new URL("../../../../..", import.meta.url));
