@@ -28,6 +28,7 @@ playwright-report
 out/
 build
 dist
+storybook-static
 packages/database/src/generated/
 
 
