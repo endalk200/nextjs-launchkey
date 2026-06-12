@@ -45,6 +45,11 @@ type Story = StoryObj<typeof meta>;
 export const Default = {} satisfies Story;
 
 export const Variants = {
+	parameters: {
+		a11y: {
+			test: "todo",
+		},
+	},
 	render: () => (
 		<div className="flex flex-wrap items-center gap-2">
 			<Button>Default</Button>

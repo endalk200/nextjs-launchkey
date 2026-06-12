@@ -21,7 +21,6 @@
 			"dependsOn": ["^test"]
 		},
 		"test:storybook": {
-			"dependsOn": ["build-storybook"],
 			"cache": false
 		},
 		"storybook": {
