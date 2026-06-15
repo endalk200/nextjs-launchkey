@@ -1,3 +1,4 @@
+import { makeTestAuthMiddlewareLayer } from "@app/auth/rpc";
 import { assert, describe, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { RpcTest } from "effect/unstable/rpc";
@@ -12,12 +13,17 @@ const existingPost = new Post({
 	title: "First post",
 	content: "First body",
 });
+const testUser = {
+	id: "user-1",
+	email: "user-1@example.com",
+	name: "User One",
+};
 
 function postServiceLayer(overrides: Partial<PostService["Service"]> = {}) {
 	return Layer.succeed(
 		PostService,
 		PostService.of({
-			list: Effect.succeed([existingPost]),
+			list: () => Effect.succeed([existingPost]),
 			create: ({ title, content }) =>
 				Effect.succeed(
 					new Post({
@@ -34,7 +40,7 @@ function postServiceLayer(overrides: Partial<PostService["Service"]> = {}) {
 						content,
 					}),
 				),
-			delete: (id) =>
+			delete: ({ id }) =>
 				Effect.succeed(
 					new Post({
 						id,
@@ -51,8 +57,13 @@ function runRpc<A, E, R>(
 	effect: Effect.Effect<A, E, R>,
 	layer = postServiceLayer(),
 ) {
+	const authLayer = makeTestAuthMiddlewareLayer(testUser);
+
 	return Effect.scoped(effect).pipe(
-		Effect.provide(PostHandlers.pipe(Layer.provide(layer))),
+		Effect.provide(
+			PostHandlers.pipe(Layer.provide(layer), Layer.provide(authLayer)),
+		),
+		Effect.provide(authLayer),
 	);
 }
 

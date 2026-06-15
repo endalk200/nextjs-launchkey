@@ -6,15 +6,20 @@ import { PostNotFoundError } from "../model/errors.ts";
 class PostRepository extends Context.Service<
 	PostRepository,
 	{
-		readonly list: Effect.Effect<ReadonlyArray<Post>, DatabaseError>;
+		readonly list: (
+			userId: string,
+		) => Effect.Effect<ReadonlyArray<Post>, DatabaseError>;
 		readonly create: (
+			userId: string,
 			title: string,
 			content: string,
 		) => Effect.Effect<Post, DatabaseError>;
 		readonly delete: (
+			userId: string,
 			id: string,
 		) => Effect.Effect<Post, DatabaseError | PostNotFoundError>;
 		readonly update: (
+			userId: string,
 			id: string,
 			title: string,
 			content: string,
@@ -28,29 +33,35 @@ const PostRepositoryPrisma = Layer.effect(
 		const database = yield* Database;
 
 		return PostRepository.of({
-			list: Effect.fn("PostRepository.List")(function* () {
-				const records = yield* database.query(
-					{ operation: "Post.List", model: "Post" },
-					(client) => client.post.findMany({ orderBy: { createdAt: "asc" } }),
-				);
+			list: (userId) =>
+				Effect.fn("PostRepository.List")(function* () {
+					const records = yield* database.query(
+						{ operation: "Post.List", model: "Post" },
+						(client) =>
+							client.post.findMany({
+								where: { userId },
+								orderBy: { createdAt: "asc" },
+							}),
+					);
 
-				const posts = records.map(
-					(record) =>
-						new Post({
-							id: record.id,
-							title: record.title,
-							content: record.content,
-						}),
-				);
+					const posts = records.map(
+						(record) =>
+							new Post({
+								id: record.id,
+								title: record.title,
+								content: record.content,
+							}),
+					);
 
-				return posts;
-			})(),
+					return posts;
+				})(),
 
-			create: (title, content) =>
+			create: (userId, title, content) =>
 				Effect.fn("PostRepository.Create")(function* () {
 					const record = yield* database.mutation(
 						{ operation: "Post.Create", model: "Post" },
-						(client) => client.post.create({ data: { title, content } }),
+						(client) =>
+							client.post.create({ data: { userId, title, content } }),
 					);
 
 					const post = new Post({
@@ -62,11 +73,13 @@ const PostRepositoryPrisma = Layer.effect(
 					return post;
 				})(),
 
-			delete: (id) =>
+			delete: (userId, id) =>
 				Effect.fn("PostRepository.Delete")(function* () {
 					const record = yield* database
 						.mutation({ operation: "Post.Delete", model: "Post" }, (client) =>
-							client.post.delete({ where: { id } }),
+							client.post.delete({
+								where: { id_userId: { id, userId } },
+							}),
 						)
 						.pipe(
 							Effect.catchIf(
@@ -90,12 +103,12 @@ const PostRepositoryPrisma = Layer.effect(
 					return post;
 				})(),
 
-			update: (id, title, content) =>
+			update: (userId, id, title, content) =>
 				Effect.fn("PostRepository.Update")(function* () {
 					const record = yield* database
 						.mutation({ operation: "Post.Update", model: "Post" }, (client) =>
 							client.post.update({
-								where: { id },
+								where: { id_userId: { id, userId } },
 								data: { title, content },
 							}),
 						)

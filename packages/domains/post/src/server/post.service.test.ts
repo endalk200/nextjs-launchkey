@@ -18,6 +18,7 @@ const post = new Post({
 	title: "First post",
 	content: "First body",
 });
+const userId = "user-1";
 
 function postRepositoryLayer(
 	overrides: Partial<PostRepository["Service"]> = {},
@@ -25,8 +26,8 @@ function postRepositoryLayer(
 	return Layer.succeed(
 		PostRepository,
 		PostRepository.of({
-			list: Effect.succeed([post]),
-			create: (title, content) =>
+			list: () => Effect.succeed([post]),
+			create: (_userId, title, content) =>
 				Effect.succeed(
 					new Post({
 						id: "00000000-0000-0000-0000-000000000002",
@@ -34,7 +35,7 @@ function postRepositoryLayer(
 						content,
 					}),
 				),
-			delete: (id) =>
+			delete: (_userId, id) =>
 				Effect.succeed(
 					new Post({
 						id,
@@ -42,7 +43,7 @@ function postRepositoryLayer(
 						content: "Deleted body",
 					}),
 				),
-			update: (id, title, content) =>
+			update: (_userId, id, title, content) =>
 				Effect.succeed(
 					new Post({
 						id,
@@ -70,6 +71,7 @@ describe("PostOperationsLive", () => {
 			const service = yield* PostService;
 
 			const result = yield* service.create({
+				userId,
 				title: "Created post",
 				content: "Created body",
 			});
@@ -89,7 +91,7 @@ describe("PostOperationsLive", () => {
 		Effect.gen(function* () {
 			const service = yield* PostService;
 
-			const error = yield* service.list.pipe(Effect.flip);
+			const error = yield* service.list(userId).pipe(Effect.flip);
 
 			assert.instanceOf(error, PostOperationFailedError);
 			assert.include(error, {
@@ -101,13 +103,14 @@ describe("PostOperationsLive", () => {
 			runPostService(
 				effect,
 				postRepositoryLayer({
-					list: Effect.fail(
-						new ConnectionUnavailable({
-							operation: "Post.List",
-							model: "Post",
-							cause: new Error("database unavailable"),
-						}),
-					),
+					list: () =>
+						Effect.fail(
+							new ConnectionUnavailable({
+								operation: "Post.List",
+								model: "Post",
+								cause: new Error("database unavailable"),
+							}),
+						),
 				}),
 			),
 		),
@@ -121,6 +124,7 @@ describe("PostOperationsLive", () => {
 
 				const error = yield* service
 					.create({
+						userId,
 						title: "Created post",
 						content: "Created body",
 					})
@@ -155,6 +159,7 @@ describe("PostOperationsLive", () => {
 
 			const error = yield* service
 				.update({
+					userId,
 					id: "00000000-0000-0000-0000-000000000009",
 					title: "Updated post",
 					content: "Updated body",
@@ -194,7 +199,10 @@ describe("PostOperationsLive", () => {
 			const service = yield* PostService;
 
 			const error = yield* service
-				.delete("00000000-0000-0000-0000-000000000009")
+				.delete({
+					userId,
+					id: "00000000-0000-0000-0000-000000000009",
+				})
 				.pipe(Effect.flip);
 
 			assert.strictEqual(error, missing);

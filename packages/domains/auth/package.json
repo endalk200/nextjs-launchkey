@@ -1,14 +1,13 @@
 {
-	"name": "@app/post",
+	"name": "@app/auth",
 	"version": "0.0.0",
 	"type": "module",
 	"private": true,
 	"exports": {
 		"./client": "./src/client.ts",
-		"./server": "./src/server.ts"
-	},
-	"imports": {
-		"#internal/*": "./src/internal/*.ts"
+		"./rpc": "./src/rpc.ts",
+		"./server": "./src/server.ts",
+		"./test": "./src/server/test-auth.ts"
 	},
 	"scripts": {
 		"lint": "biome lint .",
@@ -17,17 +16,20 @@
 		"format:write": "biome format . --write",
 		"check-types": "tsc --noEmit",
 		"test": "vitest run",
-		"test:integration": "vitest run --config vitest.integration.config.ts",
 		"test:watch": "vitest"
 	},
 	"dependencies": {
-		"@app/auth": "*",
 		"@app/database": "*",
 		"@app/ui": "*",
+		"@better-auth/prisma-adapter": "1.6.18",
+		"@react-email/components": "^1.0.12",
+		"@react-email/render": "^2.0.8",
 		"@tanstack/react-form": "^1.33.0",
-		"@tanstack/react-query": "^5.100.14",
+		"better-auth": "1.6.18",
 		"effect": "4.0.0-beta.69",
-		"react": "^19.2.6"
+		"react": "^19.2.6",
+		"resend": "^6.12.4",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@app/biome-config": "^",
@@ -36,12 +38,10 @@
 		"@storybook/nextjs-vite": "^10.4.3",
 		"@testing-library/jest-dom": "^6.9.1",
 		"@testing-library/react": "^16.3.2",
-		"@testcontainers/postgresql": "12.0.1",
 		"@types/node": "^22.15.3",
 		"@types/react": "19.2.2",
 		"@vitejs/plugin-react": "^6.0.2",
 		"jsdom": "^29.1.1",
-		"testcontainers": "12.0.1",
 		"typescript": "^6.0.3",
 		"vitest": "^4.1.8"
 	}

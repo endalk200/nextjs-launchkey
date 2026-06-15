@@ -6,6 +6,8 @@ test("manages posts through the browser", async ({ page }) => {
 
 	await page.goto("/");
 
+	await expect(page.getByText(/@example\.com/)).toBeVisible();
+
 	const emptyNewButton = page.getByTestId("posts-empty-new-button");
 	const headerNewButton = page.getByTestId("posts-new-button");
 
