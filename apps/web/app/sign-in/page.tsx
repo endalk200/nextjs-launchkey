@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { getServerSession } from "../session";
+import { callbackFrom } from "./callback-url";
 import { SignInPageForm } from "./sign-in-form";
 
 type SignInPageProps = {
@@ -8,14 +9,6 @@ type SignInPageProps = {
 		readonly callbackURL?: string;
 	}>;
 };
-
-function callbackFrom(value: string | undefined) {
-	if (!value?.startsWith("/")) {
-		return "/";
-	}
-
-	return value;
-}
 
 export default async function SignInPage({ searchParams }: SignInPageProps) {
 	const session = await getServerSession();
