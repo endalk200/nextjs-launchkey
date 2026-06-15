@@ -1,11 +1,13 @@
-import { PostListController } from "@app/post/client";
+import { redirect } from "next/navigation";
+import { HomeView } from "./home-view";
+import { getServerSession } from "./session";
 
-export default function Home() {
-	return (
-		<main className="min-h-screen bg-[#f7f7f8] px-4 py-10 text-[#17181c] sm:px-6">
-			<section className="mx-auto w-full max-w-5xl">
-				<PostListController />
-			</section>
-		</main>
-	);
+export default async function Home() {
+	const session = await getServerSession();
+
+	if (!session) {
+		redirect("/sign-in?callbackURL=%2F");
+	}
+
+	return <HomeView email={session.user.email} />;
 }

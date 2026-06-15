@@ -1,16 +1,19 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
-import Home from "./page";
+import { HomeView } from "./home-view";
 
 const meta = {
 	title: "Web/Home",
-	component: Home,
+	component: HomeView,
 	parameters: {
 		nextjs: {
 			appDirectory: true,
 		},
 	},
-} satisfies Meta<typeof Home>;
+	args: {
+		email: "user@example.com",
+	},
+} satisfies Meta<typeof HomeView>;
 
 export default meta;
 

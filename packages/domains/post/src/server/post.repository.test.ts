@@ -10,6 +10,7 @@ import { PostNotFoundError } from "../model/errors.ts";
 import { PostRepository, PostRepositoryPrisma } from "./post.repository.ts";
 
 const fakeDatabaseClient = {} as Database["Service"]["client"];
+const userId = "user-1";
 
 function runRepositoryWithDatabase<A, E>(
 	database: Database["Service"],
@@ -60,7 +61,7 @@ describe("PostRepositoryPrisma database error handling", () => {
 				Effect.gen(function* () {
 					const repo = yield* PostRepository;
 
-					return yield* repo.list;
+					return yield* repo.list(userId);
 				}),
 			).pipe(Effect.flip);
 
@@ -106,7 +107,7 @@ describe("PostRepositoryPrisma database error handling", () => {
 				Effect.gen(function* () {
 					const repo = yield* PostRepository;
 
-					return yield* repo.create("First post", "First body");
+					return yield* repo.create(userId, "First post", "First body");
 				}),
 			).pipe(Effect.flip);
 
@@ -139,7 +140,7 @@ describe("PostRepositoryPrisma database error handling", () => {
 				Effect.gen(function* () {
 					const repo = yield* PostRepository;
 
-					return yield* repo.update(id, "Updated post", "Updated body");
+					return yield* repo.update(userId, id, "Updated post", "Updated body");
 				}),
 			).pipe(Effect.flip);
 
@@ -170,7 +171,7 @@ describe("PostRepositoryPrisma database error handling", () => {
 				Effect.gen(function* () {
 					const repo = yield* PostRepository;
 
-					return yield* repo.delete(id);
+					return yield* repo.delete(userId, id);
 				}),
 			).pipe(Effect.flip);
 

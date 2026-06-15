@@ -1,6 +1,8 @@
 export {
 	Database,
 	DatabaseLive,
+	createPrismaClient,
+	makeDatabaseService,
 	PrismaService,
 	PrismaServiceLive,
 } from "./service.ts";
@@ -23,3 +25,4 @@ export type {
 	TransactionOptions,
 } from "./service.ts";
 export type { DatabaseError as DatabaseErrorType } from "./errors.ts";
+export { Prisma, PrismaClient } from "./generated/client.ts";

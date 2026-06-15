@@ -1,3 +1,4 @@
+import { AuthMiddlewareLive } from "@app/auth/server";
 import { DatabaseLive } from "@app/database";
 import {
 	PostHandlers,
@@ -29,6 +30,7 @@ const ServerLayer = RpcServer.layerHttp({
 	Layer.provide(AppHandlers),
 	Layer.provide(AppOperations),
 	Layer.provide(AppRepositories),
+	Layer.provide(AuthMiddlewareLive),
 	Layer.provide(DatabaseLive),
 	Layer.provide(RpcSerialization.layerJson),
 	Layer.provideMerge(OtelLive),

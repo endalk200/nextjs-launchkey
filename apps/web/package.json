@@ -4,6 +4,7 @@
 	"type": "module",
 	"private": true,
 	"dependencies": {
+		"@app/auth": "*",
 		"@app/database": "*",
 		"@app/post": "*",
 		"@app/ui": "*",
@@ -31,6 +32,7 @@
 		"@app/biome-config": "^",
 		"@app/typescript-config": "*",
 		"@chromatic-com/storybook": "^5.2.1",
+		"@next/env": "^16.2.6",
 		"@playwright/test": "^1.60.0",
 		"@storybook/addon-a11y": "^10.4.3",
 		"@storybook/addon-docs": "^10.4.3",

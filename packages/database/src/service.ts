@@ -67,6 +67,12 @@ export class Database extends Context.Service<
 	}
 >()("app/Database") {}
 
+export function createPrismaClient(databaseUrl: string): PrismaClient {
+	const adapter = new PrismaPg({ connectionString: databaseUrl });
+
+	return new PrismaClient({ adapter });
+}
+
 const readDatabaseUrl = Effect.gen(function* () {
 	const databaseUrl = process.env.DATABASE_URL;
 
@@ -100,8 +106,7 @@ const acquirePrismaClient = readDatabaseUrl.pipe(
 	Effect.flatMap((databaseUrl) =>
 		Effect.tryPromise({
 			try: async () => {
-				const adapter = new PrismaPg({ connectionString: databaseUrl });
-				const client = new PrismaClient({ adapter });
+				const client = createPrismaClient(databaseUrl);
 
 				await client.$connect();
 

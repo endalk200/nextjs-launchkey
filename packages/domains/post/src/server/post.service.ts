@@ -8,25 +8,34 @@ import {
 import { PostRepository } from "./post.repository.ts";
 
 type CreatePostInput = {
+	readonly userId: string;
 	readonly title: string;
 	readonly content: string;
 };
 
 type UpdatePostInput = {
+	readonly userId: string;
 	readonly id: string;
 	readonly title: string;
 	readonly content: string;
 };
 
+type DeletePostInput = {
+	readonly userId: string;
+	readonly id: string;
+};
+
 class PostService extends Context.Service<
 	PostService,
 	{
-		readonly list: Effect.Effect<ReadonlyArray<Post>, PostOperationFailedError>;
+		readonly list: (
+			userId: string,
+		) => Effect.Effect<ReadonlyArray<Post>, PostOperationFailedError>;
 		readonly create: (
 			input: CreatePostInput,
 		) => Effect.Effect<Post, PostOperationFailedError>;
 		readonly delete: (
-			id: string,
+			input: DeletePostInput,
 		) => Effect.Effect<Post, PostNotFoundError | PostOperationFailedError>;
 		readonly update: (
 			input: UpdatePostInput,
@@ -40,31 +49,32 @@ const PostOperationsLive = Layer.effect(
 		const repo = yield* PostRepository;
 
 		return PostService.of({
-			list: Effect.fn("PostService.List")(function* () {
-				const posts = yield* repo.list.pipe(
-					Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
-						Effect.fail(
-							new PostOperationFailedError({
-								operation: "Post.List",
-								message: "Something went wrong while fetching posts",
-								retryable: DatabaseError.isRetryable(error),
-							}),
+			list: (userId) =>
+				Effect.fn("PostService.List")(function* () {
+					const posts = yield* repo.list(userId).pipe(
+						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
+							Effect.fail(
+								new PostOperationFailedError({
+									operation: "Post.List",
+									message: "Something went wrong while fetching posts",
+									retryable: DatabaseError.isRetryable(error),
+								}),
+							),
 						),
-					),
-				);
+					);
 
-				yield* Effect.annotateCurrentSpan({ count: posts.length });
+					yield* Effect.annotateCurrentSpan({ count: posts.length, userId });
 
-				yield* Effect.logInfo("Listed posts").pipe(
-					Effect.annotateLogs({ count: posts.length }),
-				);
+					yield* Effect.logInfo("Listed posts").pipe(
+						Effect.annotateLogs({ count: posts.length, userId }),
+					);
 
-				return posts;
-			})(),
+					return posts;
+				})(),
 
-			create: ({ title, content }) =>
+			create: ({ userId, title, content }) =>
 				Effect.fn("PostService.Create")(function* () {
-					const post = yield* repo.create(title, content).pipe(
+					const post = yield* repo.create(userId, title, content).pipe(
 						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
 							Effect.fail(
 								new PostOperationFailedError({
@@ -76,18 +86,18 @@ const PostOperationsLive = Layer.effect(
 						),
 					);
 
-					yield* Effect.annotateCurrentSpan({ id: post.id });
+					yield* Effect.annotateCurrentSpan({ id: post.id, userId });
 
 					yield* Effect.logInfo("Created post").pipe(
-						Effect.annotateLogs({ id: post.id }),
+						Effect.annotateLogs({ id: post.id, userId }),
 					);
 
 					return post;
 				})(),
 
-			delete: (id) =>
+			delete: ({ userId, id }) =>
 				Effect.fn("PostService.Delete")(function* () {
-					const post = yield* repo.delete(id).pipe(
+					const post = yield* repo.delete(userId, id).pipe(
 						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
 							Effect.fail(
 								new PostOperationFailedError({
@@ -99,18 +109,18 @@ const PostOperationsLive = Layer.effect(
 						),
 					);
 
-					yield* Effect.annotateCurrentSpan({ id: post.id });
+					yield* Effect.annotateCurrentSpan({ id: post.id, userId });
 
 					yield* Effect.logInfo("Deleted post").pipe(
-						Effect.annotateLogs({ id: post.id }),
+						Effect.annotateLogs({ id: post.id, userId }),
 					);
 
 					return post;
 				})(),
 
-			update: ({ id, title, content }) =>
+			update: ({ userId, id, title, content }) =>
 				Effect.fn("PostService.Update")(function* () {
-					const post = yield* repo.update(id, title, content).pipe(
+					const post = yield* repo.update(userId, id, title, content).pipe(
 						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
 							Effect.fail(
 								new PostOperationFailedError({
@@ -122,10 +132,10 @@ const PostOperationsLive = Layer.effect(
 						),
 					);
 
-					yield* Effect.annotateCurrentSpan({ id: post.id });
+					yield* Effect.annotateCurrentSpan({ id: post.id, userId });
 
 					yield* Effect.logInfo("Updated post").pipe(
-						Effect.annotateLogs({ id: post.id }),
+						Effect.annotateLogs({ id: post.id, userId }),
 					);
 
 					return post;

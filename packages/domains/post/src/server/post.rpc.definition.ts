@@ -1,3 +1,4 @@
+import { AuthMiddleware } from "@app/auth/rpc";
 import { Schema } from "effect";
 import { Rpc, RpcGroup } from "effect/unstable/rpc";
 
@@ -53,6 +54,6 @@ class PostRpcs extends RpcGroup.make(
 	CreatePostRPC,
 	DeletePostRPC,
 	UpdatePostRPC,
-) {}
+).middleware(AuthMiddleware) {}
 
 export { PostRpcs };
