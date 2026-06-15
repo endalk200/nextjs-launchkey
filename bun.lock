@@ -15,6 +15,7 @@
       "version": "0.1.0",
       "dependencies": {
         "@app/auth": "*",
+        "@app/config": "*",
         "@app/database": "*",
         "@app/post": "*",
         "@app/ui": "*",
@@ -39,7 +40,7 @@
         "react-dom": "^19.2.6",
       },
       "devDependencies": {
-        "@app/biome-config": "^",
+        "@app/biome-config": "*",
         "@app/typescript-config": "*",
         "@chromatic-com/storybook": "^5.2.1",
         "@next/env": "^16.2.6",
@@ -68,6 +69,20 @@
       "name": "@app/biome-config",
       "version": "0.0.0",
     },
+    "packages/config": {
+      "name": "@app/config",
+      "version": "0.0.0",
+      "dependencies": {
+        "@t3-oss/env-core": "^0.13.11",
+        "zod": "^4.4.3",
+      },
+      "devDependencies": {
+        "@app/biome-config": "*",
+        "@app/typescript-config": "*",
+        "typescript": "^6.0.3",
+        "vitest": "^4.1.8",
+      },
+    },
     "packages/database": {
       "name": "@app/database",
       "version": "0.0.0",
@@ -79,7 +94,7 @@
         "pg": "^8.16.3",
       },
       "devDependencies": {
-        "@app/biome-config": "^",
+        "@app/biome-config": "*",
         "@app/typescript-config": "*",
         "@effect/vitest": "4.0.0-beta.69",
         "@types/node": "^22.15.3",
@@ -93,6 +108,7 @@
       "name": "@app/auth",
       "version": "0.0.0",
       "dependencies": {
+        "@app/config": "*",
         "@app/database": "*",
         "@app/ui": "*",
         "@better-auth/prisma-adapter": "1.6.18",
@@ -106,7 +122,7 @@
         "zod": "^4.4.3",
       },
       "devDependencies": {
-        "@app/biome-config": "^",
+        "@app/biome-config": "*",
         "@app/typescript-config": "*",
         "@effect/vitest": "4.0.0-beta.69",
         "@storybook/nextjs-vite": "^10.4.3",
@@ -133,7 +149,7 @@
         "react": "^19.2.6",
       },
       "devDependencies": {
-        "@app/biome-config": "^",
+        "@app/biome-config": "*",
         "@app/typescript-config": "*",
         "@effect/vitest": "4.0.0-beta.69",
         "@storybook/nextjs-vite": "^10.4.3",
@@ -153,7 +169,7 @@
       "name": "@app/utils",
       "version": "0.0.0",
       "devDependencies": {
-        "@app/biome-config": "^",
+        "@app/biome-config": "*",
         "@app/typescript-config": "*",
         "typescript": "^6.0.3",
         "vitest": "^4.1.8",
@@ -178,7 +194,7 @@
         "tw-animate-css": "^1.4.0",
       },
       "devDependencies": {
-        "@app/biome-config": "^",
+        "@app/biome-config": "*",
         "@app/typescript-config": "*",
         "@storybook/nextjs-vite": "^10.4.3",
         "@testing-library/jest-dom": "^6.9.1",
@@ -199,6 +215,8 @@
     "@app/auth": ["@app/auth@workspace:packages/domains/auth"],
 
     "@app/biome-config": ["@app/biome-config@workspace:packages/biome-config"],
+
+    "@app/config": ["@app/config@workspace:packages/config"],
 
     "@app/database": ["@app/database@workspace:packages/database"],
 
@@ -855,6 +873,8 @@
     "@storybook/react-vite": ["@storybook/react-vite@10.4.3", "", { "dependencies": { "@joshwooding/vite-plugin-react-docgen-typescript": "^0.7.0", "@rollup/pluginutils": "^5.0.2", "@storybook/builder-vite": "10.4.3", "@storybook/react": "10.4.3", "empathic": "^2.0.0", "magic-string": "^0.30.0", "react-docgen": "^8.0.0", "resolve": "^1.22.8", "tsconfig-paths": "^4.2.0" }, "peerDependencies": { "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0", "storybook": "^10.4.3", "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0" } }, "sha512-Pk/hi10JFuwJ5sj/HAapWrgaa9Z83oT4MJPbHqeKzMt3A3jkIru4L9ibnt82bzV3crOaiErprvOlAFDsjxhrrQ=="],
 
     "@swc/helpers": ["@swc/helpers@0.5.15", "", { "dependencies": { "tslib": "^2.8.0" } }, "sha512-JQ5TuMi45Owi4/BIMAJBoSQoOJu12oOk/gADqlcUL9JEdHB8vyjUSsxqeNXnmXHjYKMi2WcYtezGEEhqUI/E2g=="],
+
+    "@t3-oss/env-core": ["@t3-oss/env-core@0.13.11", "", { "peerDependencies": { "arktype": "^2.1.0", "typescript": ">=5.0.0", "valibot": "^1.0.0-beta.7 || ^1.0.0", "zod": "^3.24.0 || ^4.0.0" }, "optionalPeers": ["arktype", "typescript", "valibot", "zod"] }, "sha512-sM7GYY+KL7H/Hl0BE0inWfk3nRHZOLhmVn7sHGxaZt9FAR6KqREXAE+6TqKfiavfXmpRxO/OZ2QgKRd+oiBYRQ=="],
 
     "@tailwindcss/node": ["@tailwindcss/node@4.3.0", "", { "dependencies": { "@jridgewell/remapping": "^2.3.5", "enhanced-resolve": "^5.21.0", "jiti": "^2.6.1", "lightningcss": "1.32.0", "magic-string": "^0.30.21", "source-map-js": "^1.2.1", "tailwindcss": "4.3.0" } }, "sha512-aFb4gUhFOgdh9AXo4IzBEOzBkkAxm9VigwDJnMIYv3lcfXCJVesNfbEaBl4BNgVRyid92AmdviqwBUBRKSeY3g=="],
 

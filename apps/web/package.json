@@ -5,6 +5,7 @@
 	"private": true,
 	"dependencies": {
 		"@app/auth": "*",
+		"@app/config": "*",
 		"@app/database": "*",
 		"@app/post": "*",
 		"@app/ui": "*",
@@ -29,7 +30,7 @@
 		"react-dom": "^19.2.6"
 	},
 	"devDependencies": {
-		"@app/biome-config": "^",
+		"@app/biome-config": "*",
 		"@app/typescript-config": "*",
 		"@chromatic-com/storybook": "^5.2.1",
 		"@next/env": "^16.2.6",

@@ -1,4 +1,5 @@
 import { createPrismaClient } from "@app/database";
+import { appConfig } from "@app/config/env";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies, toNextJsHandler } from "better-auth/next-js";
@@ -6,45 +7,39 @@ import { nextCookies, toNextJsHandler } from "better-auth/next-js";
 import { makeAuthMiddlewareLayer } from "./auth-middleware.ts";
 import { sendAuthEmail } from "./email.tsx";
 
-const defaultDatabaseUrl =
-	"postgresql://launchkey:launchkey@localhost:5432/launchkey?schema=public";
-const defaultAuthUrl = "http://localhost:3000";
-const developmentSecret =
-	"development-only-secret-change-before-production-32-characters";
+function trustedOrigins() {
+	const origins = [appConfig.BETTER_AUTH_URL, appConfig.NEXT_PUBLIC_APP_URL];
 
-function readDatabaseUrl() {
-	return process.env.DATABASE_URL ?? defaultDatabaseUrl;
-}
+	if (appConfig.NODE_ENV !== "production") {
+		origins.push("http://127.0.0.1:3000", "http://localhost:3000");
+	}
 
-function readAuthSecret() {
-	return process.env.BETTER_AUTH_SECRET ?? developmentSecret;
-}
-
-function readAuthUrl() {
-	return (
-		process.env.BETTER_AUTH_URL ??
-		process.env.NEXT_PUBLIC_APP_URL ??
-		defaultAuthUrl
+	return origins.filter(
+		(value, index, values): value is string => values.indexOf(value) === index,
 	);
 }
 
-function trustedOrigins() {
-	return [
-		readAuthUrl(),
-		"http://127.0.0.1:3000",
-		"http://localhost:3000",
-	].filter((value, index, values) => values.indexOf(value) === index);
+declare global {
+	var __launchkeyAuthPrisma: ReturnType<typeof createPrismaClient> | undefined;
 }
 
-const prisma = createPrismaClient(readDatabaseUrl());
+function getAuthPrismaClient() {
+	globalThis.__launchkeyAuthPrisma ??= createPrismaClient(
+		appConfig.DATABASE_URL,
+	);
+
+	return globalThis.__launchkeyAuthPrisma;
+}
+
+const prisma = getAuthPrismaClient();
 
 export const authOptions = {
 	database: prismaAdapter(prisma, {
 		provider: "postgresql",
 		transaction: true,
 	}),
-	secret: readAuthSecret(),
-	baseURL: readAuthUrl(),
+	secret: appConfig.BETTER_AUTH_SECRET,
+	baseURL: appConfig.BETTER_AUTH_URL,
 	trustedOrigins: trustedOrigins(),
 	emailAndPassword: {
 		enabled: true,

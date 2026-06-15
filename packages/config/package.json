@@ -1,10 +1,10 @@
 {
-	"name": "@app/utils",
+	"name": "@app/config",
 	"version": "0.0.0",
 	"type": "module",
 	"private": true,
 	"exports": {
-		".": "./src/index.ts"
+		"./env": "./src/env.ts"
 	},
 	"scripts": {
 		"lint": "biome lint .",
@@ -14,6 +14,10 @@
 		"check-types": "tsc --noEmit",
 		"test": "vitest run",
 		"test:watch": "vitest"
+	},
+	"dependencies": {
+		"@t3-oss/env-core": "^0.13.11",
+		"zod": "^4.4.3"
 	},
 	"devDependencies": {
 		"@app/biome-config": "*",

@@ -30,7 +30,7 @@
 		"react": "^19.2.6"
 	},
 	"devDependencies": {
-		"@app/biome-config": "^",
+		"@app/biome-config": "*",
 		"@app/typescript-config": "*",
 		"@effect/vitest": "4.0.0-beta.69",
 		"@storybook/nextjs-vite": "^10.4.3",
