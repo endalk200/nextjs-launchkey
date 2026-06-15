@@ -691,9 +691,20 @@ export function SignOutButton({
 			disabled={isPending}
 			onClick={async () => {
 				setIsPending(true);
-				await signOut();
-				setIsPending(false);
-				onSignedOut?.();
+
+				try {
+					const result = await signOut();
+
+					if (result.error) {
+						return;
+					}
+
+					onSignedOut?.();
+				} catch {
+					return;
+				} finally {
+					setIsPending(false);
+				}
 			}}
 		>
 			Sign out

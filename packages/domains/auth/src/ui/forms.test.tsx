@@ -169,4 +169,36 @@ describe("auth forms", () => {
 			expect(onSignedOut).toHaveBeenCalledTimes(1);
 		});
 	});
+
+	it("does not call onSignedOut when sign-out returns an error", async () => {
+		const signOut = vi
+			.fn()
+			.mockResolvedValue({ error: { message: "Sign out failed." } });
+		const onSignedOut = vi.fn();
+
+		render(<SignOutButton signOut={signOut} onSignedOut={onSignedOut} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+		await waitFor(() => {
+			expect(signOut).toHaveBeenCalledTimes(1);
+			expect(onSignedOut).not.toHaveBeenCalled();
+			expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
+		});
+	});
+
+	it("clears pending and does not call onSignedOut when sign-out rejects", async () => {
+		const signOut = vi.fn().mockRejectedValue(new Error("Network failed."));
+		const onSignedOut = vi.fn();
+
+		render(<SignOutButton signOut={signOut} onSignedOut={onSignedOut} />);
+
+		fireEvent.click(screen.getByRole("button", { name: "Sign out" }));
+
+		await waitFor(() => {
+			expect(signOut).toHaveBeenCalledTimes(1);
+			expect(onSignedOut).not.toHaveBeenCalled();
+			expect(screen.getByRole("button", { name: "Sign out" })).toBeEnabled();
+		});
+	});
 });
