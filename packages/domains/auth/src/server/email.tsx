@@ -9,6 +9,7 @@ import {
 	Section,
 	Text,
 } from "@react-email/components";
+import { appConfig } from "@app/config/env";
 import { render } from "@react-email/render";
 import { Resend } from "resend";
 
@@ -110,15 +111,7 @@ function subjectFor(kind: AuthEmailKind) {
 }
 
 export async function sendAuthEmail(input: AuthEmailInput) {
-	const apiKey = process.env.RESEND_API_KEY;
-
-	if (!apiKey) {
-		if (process.env.NODE_ENV === "production") {
-			throw new Error("RESEND_API_KEY is required to send auth emails.");
-		}
-
-		return;
-	}
+	const apiKey = appConfig.RESEND_API_KEY;
 
 	const email = (
 		<AuthEmail kind={input.kind} name={input.name} url={input.url} />
@@ -127,12 +120,21 @@ export async function sendAuthEmail(input: AuthEmailInput) {
 	const text = await render(email, { plainText: true });
 	const resend = new Resend(apiKey);
 
-	await resend.emails.send({
-		from:
-			process.env.AUTH_EMAIL_FROM ?? "LaunchKey <auth@support.endalk200.com>",
+	const response = await resend.emails.send({
+		from: appConfig.AUTH_EMAIL_FROM,
 		to: input.to,
 		subject: subjectFor(input.kind),
 		html,
 		text,
 	});
+
+	if (response.error) {
+		const status = response.error.statusCode
+			? ` (status ${response.error.statusCode})`
+			: "";
+
+		throw new Error(
+			`Resend failed to send auth email: ${response.error.name}${status}: ${response.error.message}`,
+		);
+	}
 }

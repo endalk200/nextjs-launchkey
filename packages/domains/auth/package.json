@@ -19,6 +19,7 @@
 		"test:watch": "vitest"
 	},
 	"dependencies": {
+		"@app/config": "*",
 		"@app/database": "*",
 		"@app/ui": "*",
 		"@better-auth/prisma-adapter": "1.6.18",
@@ -32,7 +33,7 @@
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {
-		"@app/biome-config": "^",
+		"@app/biome-config": "*",
 		"@app/typescript-config": "*",
 		"@effect/vitest": "4.0.0-beta.69",
 		"@storybook/nextjs-vite": "^10.4.3",

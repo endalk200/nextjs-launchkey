@@ -28,7 +28,7 @@
 		"pg": "^8.16.3"
 	},
 	"devDependencies": {
-		"@app/biome-config": "^",
+		"@app/biome-config": "*",
 		"@app/typescript-config": "*",
 		"@effect/vitest": "4.0.0-beta.69",
 		"@types/node": "^22.15.3",
