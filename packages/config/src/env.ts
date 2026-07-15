@@ -2,6 +2,10 @@ import { createEnv } from "@t3-oss/env-core";
 import * as z from "zod";
 
 type RuntimeEnv = Record<string, string | boolean | number | undefined>;
+type EnvIssue = {
+	path?: readonly unknown[];
+	message: string;
+};
 
 function readNodeEnv(runtimeEnv: RuntimeEnv) {
 	if (runtimeEnv.NODE_ENV === "production") {
@@ -39,9 +43,13 @@ export function createAppEnv(runtimeEnv: RuntimeEnv = process.env) {
 		emptyStringAsUndefined: true,
 		onValidationError: (issues) => {
 			throw new Error(
-				`Invalid application environment variables: ${issues
-					.map((issue) => issue.path?.join(".") ?? issue.message)
-					.join(", ")}`,
+				`Invalid application environment variables:\n${issues
+					.map((issue: EnvIssue) => {
+						const name = issue.path?.join(".") || "unknown";
+
+						return `- ${name}: ${issue.message}`;
+					})
+					.join("\n")}`,
 			);
 		},
 	});

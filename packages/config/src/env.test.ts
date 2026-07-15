@@ -55,4 +55,14 @@ describe("application environment", () => {
 			return env[name];
 		}).toThrow(new RegExp(name));
 	});
+
+	it("reports the invalid variable and validation reason", async () => {
+		const { createAppEnv } = await importEnvModule();
+
+		expect(() => {
+			createAppEnv({ ...completeEnv, NEXT_PUBLIC_APP_URL: " " });
+		}).toThrow(
+			"Invalid application environment variables:\n- NEXT_PUBLIC_APP_URL: NEXT_PUBLIC_APP_URL is required.",
+		);
+	});
 });
