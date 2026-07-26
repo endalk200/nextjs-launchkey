@@ -1,6 +1,7 @@
 import { test as setup } from "@playwright/test";
 import nextEnv from "@next/env";
-import { createDrizzleClient, like, user as userTable } from "@app/database";
+import { createNodeDrizzleClient, like } from "@app/database";
+import { user as userTable } from "@app/database/schema";
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -8,51 +9,67 @@ import { fileURLToPath } from "node:url";
 const authFile = fileURLToPath(
 	new URL("../test-results/.auth/user.json", import.meta.url),
 );
+const signOutAuthFile = fileURLToPath(
+	new URL("../test-results/.auth/sign-out-user.json", import.meta.url),
+);
 const { loadEnvConfig } = nextEnv as typeof import("@next/env");
 
-setup("authenticate", async ({ context }) => {
+setup("authenticate", async ({ baseURL, browser }) => {
 	loadEnvConfig(process.cwd());
 
 	const { testAuth } = await import("@app/auth/test");
 	const authContext = await testAuth.$context;
-	const id = `e2e-user-${Date.now()}`;
-	const user = authContext.test.createUser({
-		id,
-		email: `${id}@example.com`,
-		name: "Playwright User",
-		emailVerified: true,
-	});
+	const cookieDomain = new URL(baseURL ?? "http://127.0.0.1:3000").hostname;
 
 	try {
 		await cleanupOldE2eUsers();
-		await authContext.test.saveUser(user);
+
+		for (const [suffix, path] of [
+			["user", authFile],
+			["sign-out", signOutAuthFile],
+		] as const) {
+			const id = `e2e-${suffix}-${Date.now()}`;
+			const user = authContext.test.createUser({
+				id,
+				email: `${id}@example.com`,
+				name: "Playwright User",
+				emailVerified: true,
+			});
+
+			await authContext.test.saveUser(user);
+
+			const cookies = await authContext.test.getCookies({
+				userId: user.id,
+				domain: cookieDomain,
+			});
+			const context = await browser.newContext();
+
+			try {
+				await context.addCookies(
+					cookies.map((cookie) => ({
+						...cookie,
+						domain: cookieDomain,
+						path: cookie.path || "/",
+						sameSite: cookie.sameSite ?? "Lax",
+					})),
+				);
+
+				await mkdir(dirname(path), { recursive: true });
+				await context.storageState({ path });
+			} finally {
+				await context.close();
+			}
+		}
 	} catch (error) {
 		throw new Error(
 			[
-				"Could not create the Better Auth e2e user.",
+				"Could not create the Better Auth e2e users.",
 				"Make sure the e2e Postgres database is running and migrations have been applied.",
 				`Original error: ${describeError(error)}`,
 			].join("\n"),
 			{ cause: error },
 		);
 	}
-
-	const cookies = await authContext.test.getCookies({
-		userId: user.id,
-		domain: "127.0.0.1",
-	});
-
-	await context.addCookies(
-		cookies.map((cookie) => ({
-			...cookie,
-			domain: "127.0.0.1",
-			path: cookie.path || "/",
-			sameSite: cookie.sameSite ?? "Lax",
-		})),
-	);
-
-	await mkdir(dirname(authFile), { recursive: true });
-	await context.storageState({ path: authFile });
 });
 
 async function cleanupOldE2eUsers() {
@@ -62,10 +79,10 @@ async function cleanupOldE2eUsers() {
 		return;
 	}
 
-	const database = createDrizzleClient(databaseUrl);
+	const database = createNodeDrizzleClient(databaseUrl);
 
 	try {
-		await database.delete(userTable).where(like(userTable.email, "e2e-user-%"));
+		await database.delete(userTable).where(like(userTable.email, "e2e-%"));
 	} finally {
 		await database.$client.end();
 	}

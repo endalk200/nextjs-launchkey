@@ -1,15 +1,22 @@
 import { defineConfig, devices } from "@playwright/test";
+import nextEnv from "@next/env";
+
+const { loadEnvConfig } = nextEnv as typeof import("@next/env");
+
+loadEnvConfig(process.cwd());
+
+const baseURL = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
 
 export default defineConfig({
 	testDir: "./e2e",
 	fullyParallel: false,
 	forbidOnly: !!process.env.CI,
 	retries: process.env.CI ? 2 : 0,
-	workers: process.env.CI ? 1 : undefined,
+	workers: 1,
 	reporter: [["list"], ["html", { open: "never" }]],
 	outputDir: "test-results",
 	use: {
-		baseURL: "http://127.0.0.1:3000",
+		baseURL,
 		trace: "on-first-retry",
 		screenshot: "only-on-failure",
 		video: "retain-on-failure",
@@ -31,7 +38,7 @@ export default defineConfig({
 	],
 	webServer: {
 		command: "bun run start --port 3000",
-		url: "http://127.0.0.1:3000",
+		url: baseURL,
 		reuseExistingServer: !process.env.CI,
 		timeout: 120_000,
 	},
