@@ -3,7 +3,7 @@
 	"ui": "stream",
 	"tasks": {
 		"build": {
-			"dependsOn": ["^build", "db:generate"],
+			"dependsOn": ["^build"],
 			"inputs": ["$TURBO_DEFAULT$", ".env*"],
 			"outputs": [".next/**", "!.next/cache/**"]
 		},
@@ -15,7 +15,7 @@
 			"cache": false
 		},
 		"check-types": {
-			"dependsOn": ["^check-types", "db:generate"]
+			"dependsOn": ["^check-types"]
 		},
 		"test": {
 			"dependsOn": ["^test"]
@@ -32,11 +32,11 @@
 			"outputs": ["storybook-static/**"]
 		},
 		"test:integration": {
-			"dependsOn": ["^test:integration", "db:generate"],
+			"dependsOn": ["^test:integration"],
 			"cache": false
 		},
 		"db:generate": {
-			"outputs": ["src/generated/**"]
+			"outputs": ["drizzle/**"]
 		},
 		"test:e2e": {
 			"dependsOn": ["build", "^build"],
@@ -51,7 +51,6 @@
 			"cache": false
 		},
 		"dev": {
-			"dependsOn": ["db:generate"],
 			"cache": false,
 			"persistent": true
 		}

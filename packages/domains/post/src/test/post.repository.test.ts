@@ -1,4 +1,4 @@
-import { Database, DatabaseLive } from "@app/database";
+import { Database, DatabaseLive, sql, user } from "@app/database";
 import { assert, describe, it } from "@effect/vitest";
 import {
 	PostgreSqlContainer,
@@ -12,7 +12,7 @@ import { PostNotFoundError } from "../model/errors.ts";
 import { Post } from "../model/post.ts";
 import {
 	PostRepository,
-	PostRepositoryPrisma,
+	PostRepositoryDrizzle,
 } from "../server/post.repository.ts";
 
 let container: StartedPostgreSqlContainer;
@@ -34,7 +34,7 @@ function assertDockerRuntime() {
 
 function runRepository<A, E>(effect: Effect.Effect<A, E, PostRepository>) {
 	return effect.pipe(
-		Effect.provide(PostRepositoryPrisma.pipe(Layer.provide(DatabaseLive))),
+		Effect.provide(PostRepositoryDrizzle.pipe(Layer.provide(DatabaseLive))),
 	);
 }
 
@@ -42,7 +42,7 @@ function runWithDatabase<A, E>(effect: Effect.Effect<A, E, Database>) {
 	return Effect.runPromise(effect.pipe(Effect.provide(DatabaseLive)));
 }
 
-describe("PostRepositoryPrisma integration", () => {
+describe("PostRepositoryDrizzle integration", () => {
 	beforeAll(async () => {
 		assertDockerRuntime();
 
@@ -77,32 +77,25 @@ describe("PostRepositoryPrisma integration", () => {
 				const database = yield* Database;
 
 				yield* database
-					.mutation({ operation: "PostTest.Reset", model: "Post" }, (client) =>
-						client.$executeRawUnsafe('TRUNCATE TABLE "posts", "user" CASCADE'),
-					)
+					.execute(sql`TRUNCATE TABLE "posts", "user" CASCADE`)
 					.pipe(Effect.orDie);
 
 				yield* database
-					.mutation(
-						{ operation: "PostTest.SeedUsers", model: "User" },
-						(client) =>
-							client.user.createMany({
-								data: [
-									{
-										id: userId,
-										name: "User One",
-										email: "user-1@example.com",
-										emailVerified: true,
-									},
-									{
-										id: otherUserId,
-										name: "User Two",
-										email: "user-2@example.com",
-										emailVerified: true,
-									},
-								],
-							}),
-					)
+					.insert(user)
+					.values([
+						{
+							id: userId,
+							name: "User One",
+							email: "user-1@example.com",
+							emailVerified: true,
+						},
+						{
+							id: otherUserId,
+							name: "User Two",
+							email: "user-2@example.com",
+							emailVerified: true,
+						},
+					])
 					.pipe(Effect.orDie);
 			}),
 		);

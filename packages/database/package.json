@@ -5,35 +5,37 @@
 	"private": true,
 	"exports": {
 		".": "./src/index.ts",
-		"./generated/client": "./src/generated/client.ts"
+		"./schema": "./src/schema.ts"
 	},
 	"scripts": {
-		"db:generate": "prisma generate --schema prisma/schema.prisma",
-		"db:migrate:dev": "prisma migrate dev --schema prisma/schema.prisma",
-		"db:migrate:deploy": "prisma migrate deploy --schema prisma/schema.prisma",
-		"db:migrate:reset": "prisma migrate reset --schema prisma/schema.prisma",
-		"db:studio": "prisma studio --browser none",
+		"db:generate": "drizzle-kit generate",
+		"db:migrate:dev": "drizzle-kit migrate --config drizzle.migrate.config.ts",
+		"db:migrate:deploy": "drizzle-kit migrate --config drizzle.migrate.config.ts",
+		"db:studio": "drizzle-kit studio --config drizzle.migrate.config.ts",
 		"lint": "biome lint .",
 		"lint:fix": "biome lint . --write",
 		"format:check": "biome format .",
 		"format:write": "biome format . --write",
 		"check-types": "tsc --noEmit",
-		"test": "vitest run --passWithNoTests"
+		"test": "vitest run --passWithNoTests",
+		"test:integration": "vitest run --config vitest.integration.config.ts"
 	},
 	"dependencies": {
-		"@prisma/adapter-pg": "7.8.0",
-		"@prisma/client": "7.8.0",
+		"@effect/sql-pg": "4.0.0-beta.101",
 		"dotenv": "^17.2.3",
-		"effect": "4.0.0-beta.69",
+		"drizzle-orm": "1.0.0-rc.4",
+		"effect": "4.0.0-beta.101",
 		"pg": "^8.16.3"
 	},
 	"devDependencies": {
 		"@app/biome-config": "*",
 		"@app/typescript-config": "*",
-		"@effect/vitest": "4.0.0-beta.69",
+		"@effect/vitest": "4.0.0-beta.101",
+		"@testcontainers/postgresql": "12.0.1",
 		"@types/node": "^22.15.3",
 		"@types/pg": "^8.15.6",
-		"prisma": "7.8.0",
+		"drizzle-kit": "1.0.0-rc.4",
+		"testcontainers": "12.0.1",
 		"typescript": "^6.0.3",
 		"vitest": "^4.1.8"
 	}

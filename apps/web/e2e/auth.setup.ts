@@ -1,6 +1,6 @@
 import { test as setup } from "@playwright/test";
 import nextEnv from "@next/env";
-import { createPrismaClient } from "@app/database";
+import { createDrizzleClient, like, user as userTable } from "@app/database";
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -62,18 +62,12 @@ async function cleanupOldE2eUsers() {
 		return;
 	}
 
-	const prisma = createPrismaClient(databaseUrl);
+	const database = createDrizzleClient(databaseUrl);
 
 	try {
-		await prisma.user.deleteMany({
-			where: {
-				email: {
-					startsWith: "e2e-user-",
-				},
-			},
-		});
+		await database.delete(userTable).where(like(userTable.email, "e2e-user-%"));
 	} finally {
-		await prisma.$disconnect();
+		await database.$client.end();
 	}
 }
 

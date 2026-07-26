@@ -66,13 +66,17 @@ test.describe("authenticated authentication", () => {
 		await page.goto("/sign-in?callbackURL=%2F");
 
 		await expect(page).toHaveURL("/");
-		await expect(page.getByRole("heading", { name: "Posts" })).toBeVisible();
+		await expect(
+			page.getByRole("heading", { level: 1, name: "Posts" }),
+		).toBeVisible();
 	});
 
 	test("signs out and requires authentication again", async ({ page }) => {
 		await page.goto("/");
 
-		await expect(page.getByRole("heading", { name: "Posts" })).toBeVisible();
+		await expect(
+			page.getByRole("heading", { level: 1, name: "Posts" }),
+		).toBeVisible();
 
 		await page.getByRole("button", { name: "Sign out" }).click();
 
