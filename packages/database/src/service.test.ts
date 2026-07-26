@@ -7,9 +7,22 @@ import {
 	UniqueViolation,
 } from "effect/unstable/sql/SqlError";
 import { isRetryableDatabaseError } from "./errors.ts";
-import { Database, DatabaseLive } from "./service.ts";
+import {
+	DATABASE_CONNECTION_BUDGET,
+	Database,
+	DatabaseLive,
+	EFFECT_DATABASE_POOL_MAX,
+	NODE_DATABASE_POOL_MAX,
+} from "./service.ts";
 
 describe("DatabaseLive", () => {
+	it("splits one process-wide connection budget across both database clients", () => {
+		assert.strictEqual(
+			EFFECT_DATABASE_POOL_MAX + NODE_DATABASE_POOL_MAX,
+			DATABASE_CONNECTION_BUDGET,
+		);
+	});
+
 	it.effect("requires DATABASE_URL", () =>
 		Effect.gen(function* () {
 			const originalDatabaseUrl = process.env.DATABASE_URL;

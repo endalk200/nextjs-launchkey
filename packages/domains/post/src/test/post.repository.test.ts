@@ -1,4 +1,5 @@
-import { Database, DatabaseLive, sql, user } from "@app/database";
+import { Database, DatabaseLive, sql } from "@app/database";
+import { user } from "@app/database/schema";
 import { assert, describe, it } from "@effect/vitest";
 import {
 	PostgreSqlContainer,
@@ -6,7 +7,7 @@ import {
 } from "@testcontainers/postgresql";
 import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
-import { Effect, Layer } from "effect";
+import { Effect, Layer, ManagedRuntime } from "effect";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { PostNotFoundError } from "../model/errors.ts";
 import { Post } from "../model/post.ts";
@@ -20,6 +21,15 @@ const rootDirectory = fileURLToPath(new URL("../../../../..", import.meta.url));
 const originalDatabaseUrl = process.env.DATABASE_URL;
 const userId = "user-1";
 const otherUserId = "user-2";
+const TestServicesLive = PostRepositoryDrizzle.pipe(
+	Layer.provideMerge(DatabaseLive),
+);
+const makeTestRuntime = () => ManagedRuntime.make(TestServicesLive);
+type TestRuntime = ReturnType<typeof makeTestRuntime>;
+type TestContext = Awaited<ReturnType<TestRuntime["context"]>>;
+
+let testRuntime: TestRuntime;
+let testContext: TestContext;
 
 function assertDockerRuntime() {
 	try {
@@ -33,13 +43,11 @@ function assertDockerRuntime() {
 }
 
 function runRepository<A, E>(effect: Effect.Effect<A, E, PostRepository>) {
-	return effect.pipe(
-		Effect.provide(PostRepositoryDrizzle.pipe(Layer.provide(DatabaseLive))),
-	);
+	return effect.pipe(Effect.provide(testContext));
 }
 
 function runWithDatabase<A, E>(effect: Effect.Effect<A, E, Database>) {
-	return Effect.runPromise(effect.pipe(Effect.provide(DatabaseLive)));
+	return testRuntime.runPromise(effect);
 }
 
 describe("PostRepositoryDrizzle integration", () => {
@@ -59,9 +67,14 @@ describe("PostRepositoryDrizzle integration", () => {
 			env: process.env,
 			stdio: "inherit",
 		});
+
+		testRuntime = makeTestRuntime();
+		testContext = await testRuntime.context();
 	});
 
 	afterAll(async () => {
+		await testRuntime?.dispose();
+
 		if (originalDatabaseUrl === undefined) {
 			delete process.env.DATABASE_URL;
 		} else {

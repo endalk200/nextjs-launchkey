@@ -1,11 +1,5 @@
-import {
-	Database,
-	type DatabaseError,
-	and,
-	asc,
-	eq,
-	posts,
-} from "@app/database";
+import { Database, type DatabaseError, and, asc, eq } from "@app/database";
+import { posts } from "@app/database/schema";
 import { Context, Effect, Layer } from "effect";
 import { PostNotFoundError } from "../model/errors.ts";
 import { Post } from "../model/post.ts";

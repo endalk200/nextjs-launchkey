@@ -1,12 +1,11 @@
+import { createNodeDrizzleClient, sql } from "@app/database";
 import {
 	account,
 	authSchema,
-	createDrizzleClient,
 	session,
-	sql,
 	user,
 	verification,
-} from "@app/database";
+} from "@app/database/schema";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import {
 	PostgreSqlContainer,
@@ -18,7 +17,7 @@ import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 let container: StartedPostgreSqlContainer;
-let database: ReturnType<typeof createDrizzleClient>;
+let database: ReturnType<typeof createNodeDrizzleClient>;
 
 const rootDirectory = fileURLToPath(new URL("../../../../..", import.meta.url));
 const authSecret = "better-auth-drizzle-integration-test-secret";
@@ -55,7 +54,7 @@ describe("Better Auth Drizzle integration", () => {
 
 		migrate(databaseUrl);
 
-		database = createDrizzleClient(databaseUrl);
+		database = createNodeDrizzleClient(databaseUrl);
 	});
 
 	afterAll(async () => {

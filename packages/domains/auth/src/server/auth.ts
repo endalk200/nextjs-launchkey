@@ -1,4 +1,5 @@
-import { authSchema, createDrizzleClient } from "@app/database";
+import { createNodeDrizzleClient } from "@app/database";
+import { authSchema } from "@app/database/schema";
 import { appConfig } from "@app/config/env";
 import { drizzleAdapter } from "@better-auth/drizzle-adapter";
 import { betterAuth } from "better-auth/minimal";
@@ -21,12 +22,12 @@ function trustedOrigins() {
 
 declare global {
 	var __launchkeyAuthDatabase:
-		| ReturnType<typeof createDrizzleClient>
+		| ReturnType<typeof createNodeDrizzleClient>
 		| undefined;
 }
 
 function getAuthDatabase() {
-	globalThis.__launchkeyAuthDatabase ??= createDrizzleClient(
+	globalThis.__launchkeyAuthDatabase ??= createNodeDrizzleClient(
 		appConfig.DATABASE_URL,
 	);
 

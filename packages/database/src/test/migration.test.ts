@@ -73,6 +73,38 @@ describe("Drizzle baseline migration", () => {
 				AND column_name IN ('accountId', 'issuer', 'providerAccountId')
 			ORDER BY column_name
 		`);
+		const updatedAtDefaults = await client.query<{
+			table_name: string;
+			column_name: string;
+			column_default: string | null;
+		}>(`
+			SELECT table_name, column_name, column_default
+			FROM information_schema.columns
+			WHERE table_schema = 'public'
+				AND (
+					(table_name = 'posts' AND column_name = 'updated_at')
+					OR (
+						table_name IN ('account', 'session', 'user', 'verification')
+						AND column_name = 'updatedAt'
+					)
+				)
+			ORDER BY table_name
+		`);
+		const insertedPost = await client.query<{
+			id: string;
+			has_timestamps: boolean;
+		}>(`
+			WITH inserted_user AS (
+				INSERT INTO "user" ("id", "name", "email")
+				VALUES ('migration-default-user', 'Migration User', 'migration@example.com')
+				RETURNING "id"
+			)
+			INSERT INTO "posts" ("user_id", "title", "content")
+			SELECT "id", 'Migration post', 'Database defaults' FROM inserted_user
+			RETURNING
+				"id",
+				"created_at" IS NOT NULL AND "updated_at" IS NOT NULL AS has_timestamps
+		`);
 		const migrationCount = await client.query<{ count: number }>(
 			`SELECT count(*)::int AS count FROM "drizzle"."__drizzle_migrations"`,
 		);
@@ -87,6 +119,39 @@ describe("Drizzle baseline migration", () => {
 		expect(accountIdentityColumns.rows).toEqual([
 			{ column_name: "issuer", is_nullable: "NO" },
 			{ column_name: "providerAccountId", is_nullable: "NO" },
+		]);
+		expect(updatedAtDefaults.rows).toEqual([
+			{
+				table_name: "account",
+				column_name: "updatedAt",
+				column_default: "now()",
+			},
+			{
+				table_name: "posts",
+				column_name: "updated_at",
+				column_default: "now()",
+			},
+			{
+				table_name: "session",
+				column_name: "updatedAt",
+				column_default: "now()",
+			},
+			{
+				table_name: "user",
+				column_name: "updatedAt",
+				column_default: "now()",
+			},
+			{
+				table_name: "verification",
+				column_name: "updatedAt",
+				column_default: "now()",
+			},
+		]);
+		expect(insertedPost.rows).toEqual([
+			{
+				id: expect.stringMatching(/^[0-9a-f-]{36}$/),
+				has_timestamps: true,
+			},
 		]);
 		expect(migrationCount.rows).toEqual([{ count: 1 }]);
 	});

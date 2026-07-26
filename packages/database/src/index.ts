@@ -1,10 +1,12 @@
 export {
-	createDrizzleClient,
+	createNodeDrizzleClient,
 	DATABASE_CONNECT_TIMEOUT_MS,
+	DATABASE_CONNECTION_BUDGET,
 	DATABASE_IDLE_TIMEOUT_MS,
-	DATABASE_POOL_MAX,
 	Database,
 	DatabaseLive,
+	EFFECT_DATABASE_POOL_MAX,
+	NODE_DATABASE_POOL_MAX,
 } from "./service.ts";
 export type { DatabaseClient } from "./service.ts";
 export {
@@ -16,11 +18,3 @@ export {
 export { isRetryableDatabaseError } from "./errors.ts";
 export type { DatabaseError } from "./errors.ts";
 export { and, asc, eq, like, sql } from "drizzle-orm";
-export {
-	account,
-	authSchema,
-	posts,
-	session,
-	user,
-	verification,
-} from "./schema.ts";

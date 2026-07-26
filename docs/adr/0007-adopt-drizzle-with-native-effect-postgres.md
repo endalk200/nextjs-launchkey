@@ -41,10 +41,12 @@ smaller and covers the current authentication flows; joins can be adopted in a
 separate measured change if database latency justifies the added relation
 surface.
 
-The Effect repository pool and Better Auth adapter pool each allow at most five
-connections, for a maximum of ten PostgreSQL connections in a process that
-loads both. Both clients fail connection attempts after five seconds and
-release idle connections after thirty seconds.
+The native Effect client and Better Auth's Promise-oriented adapter have
+independent execution and resource lifecycles, so they intentionally retain
+separate pools. They share one five-connection process budget: Effect
+repositories may use three connections and Better Auth may use two. Both
+clients fail connection attempts after five seconds and release idle
+connections after thirty seconds.
 
 ## Greenfield cutover
 
@@ -68,6 +70,22 @@ a compatible Effect 4 beta. The repository pins the compatibility set exactly:
 These versions must be upgraded together after checking their peer ranges,
 version-matched source, generated SQL, and Better Auth's generated reference
 schema.
+
+Before promoting a new compatibility set, update all pins in one branch,
+inspect the version-matched Effect and Drizzle source, regenerate the baseline
+against an empty database, compare Better Auth's generated reference schema,
+and pass formatting, type checking, linting, unit, integration, and browser
+tests. Exercise the built application against a disposable PostgreSQL 17
+database before deployment.
+
+Before a database migration is deployed, rolling back means reverting the
+compatibility-set commit and its lockfile changes. For this greenfield baseline,
+an environment that has already applied the migration is rolled back by
+restoring the previous application revision and recreating its disposable empty
+database. Once persistent production data exists, dependency rollback must use
+a separately reviewed forward or compensating database migration; deleting a
+committed migration or relying on legacy compatibility code is not a rollback
+strategy.
 
 ## Consequences
 
