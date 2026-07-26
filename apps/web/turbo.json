@@ -1,0 +1,46 @@
+{
+	"$schema": "https://turbo.build/schema.json",
+	"extends": ["//"],
+	"tasks": {
+		"build": {
+			"env": ["NEXT_PUBLIC_APP_URL"],
+			"passThroughEnv": [
+				"AUTH_EMAIL_FROM",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"RESEND_API_KEY"
+			]
+		},
+		"test:e2e": {
+			"env": ["NEXT_PUBLIC_APP_URL"],
+			"passThroughEnv": [
+				"AUTH_EMAIL_FROM",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"RESEND_API_KEY"
+			]
+		},
+		"test:e2e:headed": {
+			"env": ["NEXT_PUBLIC_APP_URL"],
+			"passThroughEnv": [
+				"AUTH_EMAIL_FROM",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"RESEND_API_KEY"
+			]
+		},
+		"test:e2e:ui": {
+			"env": ["NEXT_PUBLIC_APP_URL"],
+			"passThroughEnv": [
+				"AUTH_EMAIL_FROM",
+				"BETTER_AUTH_SECRET",
+				"BETTER_AUTH_URL",
+				"DATABASE_URL",
+				"RESEND_API_KEY"
+			]
+		}
+	}
+}

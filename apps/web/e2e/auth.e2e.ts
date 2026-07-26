@@ -11,14 +11,17 @@ test.describe("anonymous authentication", () => {
 	});
 
 	test("rejects an invalid Better Auth session cookie", async ({
+		baseURL,
 		context,
 		page,
 	}) => {
+		const cookieDomain = new URL(baseURL ?? "http://127.0.0.1:3000").hostname;
+
 		await context.addCookies([
 			{
 				name: "better-auth.session_token",
 				value: "invalid-session-token",
-				domain: "127.0.0.1",
+				domain: cookieDomain,
 				path: "/",
 				httpOnly: true,
 				sameSite: "Lax",
@@ -70,6 +73,10 @@ test.describe("authenticated authentication", () => {
 			page.getByRole("heading", { level: 1, name: "Posts" }),
 		).toBeVisible();
 	});
+});
+
+test.describe("authenticated sign-out", () => {
+	test.use({ storageState: "test-results/.auth/sign-out-user.json" });
 
 	test("signs out and requires authentication again", async ({ page }) => {
 		await page.goto("/");
