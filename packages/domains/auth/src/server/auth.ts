@@ -1,7 +1,7 @@
-import { createPrismaClient } from "@app/database";
+import { authSchema, createDrizzleClient } from "@app/database";
 import { appConfig } from "@app/config/env";
-import { betterAuth } from "better-auth";
-import { prismaAdapter } from "better-auth/adapters/prisma";
+import { drizzleAdapter } from "@better-auth/drizzle-adapter";
+import { betterAuth } from "better-auth/minimal";
 import { nextCookies, toNextJsHandler } from "better-auth/next-js";
 
 import { makeAuthMiddlewareLayer } from "./auth-middleware.ts";
@@ -20,22 +20,26 @@ function trustedOrigins() {
 }
 
 declare global {
-	var __launchkeyAuthPrisma: ReturnType<typeof createPrismaClient> | undefined;
+	var __launchkeyAuthDatabase:
+		| ReturnType<typeof createDrizzleClient>
+		| undefined;
 }
 
-function getAuthPrismaClient() {
-	globalThis.__launchkeyAuthPrisma ??= createPrismaClient(
+function getAuthDatabase() {
+	globalThis.__launchkeyAuthDatabase ??= createDrizzleClient(
 		appConfig.DATABASE_URL,
 	);
 
-	return globalThis.__launchkeyAuthPrisma;
+	return globalThis.__launchkeyAuthDatabase;
 }
 
-const prisma = getAuthPrismaClient();
+const database = getAuthDatabase();
 
 export const authOptions = {
-	database: prismaAdapter(prisma, {
-		provider: "postgresql",
+	database: drizzleAdapter(database, {
+		provider: "pg",
+		schema: authSchema,
+		camelCase: true,
 		transaction: true,
 	}),
 	secret: appConfig.BETTER_AUTH_SECRET,

@@ -1,10 +1,11 @@
-import {
-	ConnectionUnavailable,
-	RecordRequiredButMissing,
-	UnexpectedDatabaseError,
-} from "@app/database";
 import { assert, describe, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
+import {
+	ConnectionError,
+	ConstraintError,
+	SqlError,
+	UniqueViolation,
+} from "effect/unstable/sql/SqlError";
 import {
 	PostNotFoundError,
 	PostOperationFailedError,
@@ -105,10 +106,10 @@ describe("PostOperationsLive", () => {
 				postRepositoryLayer({
 					list: () =>
 						Effect.fail(
-							new ConnectionUnavailable({
-								operation: "Post.List",
-								model: "Post",
-								cause: new Error("database unavailable"),
+							new SqlError({
+								reason: new ConnectionError({
+									cause: new Error("database unavailable"),
+								}),
 							}),
 						),
 				}),
@@ -142,10 +143,11 @@ describe("PostOperationsLive", () => {
 					postRepositoryLayer({
 						create: () =>
 							Effect.fail(
-								new UnexpectedDatabaseError({
-									operation: "Post.Create",
-									model: "Post",
-									cause: new Error("database failed"),
+								new SqlError({
+									reason: new UniqueViolation({
+										constraint: "posts_title_key",
+										cause: new Error("duplicate"),
+									}),
 								}),
 							),
 					}),
@@ -153,40 +155,42 @@ describe("PostOperationsLive", () => {
 			),
 	);
 
-	it.effect("does not translate leaked database misses into PostNotFound", () =>
-		Effect.gen(function* () {
-			const service = yield* PostService;
+	it.effect(
+		"does not translate SQL constraint failures into PostNotFound",
+		() =>
+			Effect.gen(function* () {
+				const service = yield* PostService;
 
-			const error = yield* service
-				.update({
-					userId,
-					id: "00000000-0000-0000-0000-000000000009",
-					title: "Updated post",
-					content: "Updated body",
-				})
-				.pipe(Effect.flip);
+				const error = yield* service
+					.update({
+						userId,
+						id: "00000000-0000-0000-0000-000000000009",
+						title: "Updated post",
+						content: "Updated body",
+					})
+					.pipe(Effect.flip);
 
-			assert.instanceOf(error, PostOperationFailedError);
-			assert.include(error, {
-				operation: "Post.Update",
-				message: "Something went wrong while updating a post",
-				retryable: false,
-			});
-		}).pipe((effect) =>
-			runPostService(
-				effect,
-				postRepositoryLayer({
-					update: () =>
-						Effect.fail(
-							new RecordRequiredButMissing({
-								operation: "Post.Update",
-								model: "Post",
-								cause: new Error("missing record"),
-							}),
-						),
-				}),
+				assert.instanceOf(error, PostOperationFailedError);
+				assert.include(error, {
+					operation: "Post.Update",
+					message: "Something went wrong while updating a post",
+					retryable: false,
+				});
+			}).pipe((effect) =>
+				runPostService(
+					effect,
+					postRepositoryLayer({
+						update: () =>
+							Effect.fail(
+								new SqlError({
+									reason: new ConstraintError({
+										cause: new Error("constraint failed"),
+									}),
+								}),
+							),
+					}),
+				),
 			),
-		),
 	);
 
 	it.effect("preserves PostNotFound failures from the repository", () => {

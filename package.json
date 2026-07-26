@@ -25,7 +25,6 @@
 		"db:generate": "turbo run db:generate",
 		"db:migrate:dev": "bun --filter @app/database db:migrate:dev",
 		"db:migrate:deploy": "bun --filter @app/database db:migrate:deploy",
-		"db:migrate:reset": "bun --filter @app/database db:migrate:reset",
 		"db:studio": "bun --filter @app/database db:studio",
 		"storybook": "turbo run storybook",
 		"test:e2e": "turbo run test:e2e",

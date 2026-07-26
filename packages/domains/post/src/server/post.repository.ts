@@ -1,7 +1,14 @@
-import { Database, DatabaseError } from "@app/database";
+import {
+	Database,
+	type DatabaseError,
+	and,
+	asc,
+	eq,
+	posts,
+} from "@app/database";
 import { Context, Effect, Layer } from "effect";
-import { Post } from "../model/post.ts";
 import { PostNotFoundError } from "../model/errors.ts";
+import { Post } from "../model/post.ts";
 
 class PostRepository extends Context.Service<
 	PostRepository,
@@ -27,7 +34,25 @@ class PostRepository extends Context.Service<
 	}
 >()("app/PostRepo") {}
 
-const PostRepositoryPrisma = Layer.effect(
+const selection = {
+	id: posts.id,
+	title: posts.title,
+	content: posts.content,
+};
+
+function toPost(record: {
+	readonly id: string;
+	readonly title: string;
+	readonly content: string;
+}) {
+	return new Post(record);
+}
+
+function postNotFound(id: string) {
+	return new PostNotFoundError({ id, message: "Post not found" });
+}
+
+const PostRepositoryDrizzle = Layer.effect(
 	PostRepository,
 	Effect.gen(function* () {
 		const database = yield* Database;
@@ -35,106 +60,62 @@ const PostRepositoryPrisma = Layer.effect(
 		return PostRepository.of({
 			list: (userId) =>
 				Effect.fn("PostRepository.List")(function* () {
-					const records = yield* database.query(
-						{ operation: "Post.List", model: "Post" },
-						(client) =>
-							client.post.findMany({
-								where: { userId },
-								orderBy: { createdAt: "asc" },
-							}),
-					);
+					const records = yield* database
+						.select(selection)
+						.from(posts)
+						.where(eq(posts.userId, userId))
+						.orderBy(asc(posts.createdAt), asc(posts.id));
 
-					const posts = records.map(
-						(record) =>
-							new Post({
-								id: record.id,
-								title: record.title,
-								content: record.content,
-							}),
-					);
-
-					return posts;
+					return records.map(toPost);
 				})(),
 
 			create: (userId, title, content) =>
 				Effect.fn("PostRepository.Create")(function* () {
-					const record = yield* database.mutation(
-						{ operation: "Post.Create", model: "Post" },
-						(client) =>
-							client.post.create({ data: { userId, title, content } }),
-					);
+					const records = yield* database
+						.insert(posts)
+						.values({ userId, title, content })
+						.returning(selection);
+					const record = records[0];
 
-					const post = new Post({
-						id: record.id,
-						title: record.title,
-						content: record.content,
-					});
+					if (record === undefined) {
+						return yield* Effect.die("Post insert returned no record");
+					}
 
-					return post;
+					return toPost(record);
 				})(),
 
 			delete: (userId, id) =>
 				Effect.fn("PostRepository.Delete")(function* () {
-					const record = yield* database
-						.mutation({ operation: "Post.Delete", model: "Post" }, (client) =>
-							client.post.delete({
-								where: { id_userId: { id, userId } },
-							}),
-						)
-						.pipe(
-							Effect.catchIf(
-								(error) => error._tag === "RecordRequiredButMissing",
-								() =>
-									Effect.fail(
-										new PostNotFoundError({
-											id,
-											message: "Post not found",
-										}),
-									),
-							),
-						);
+					const records = yield* database
+						.delete(posts)
+						.where(and(eq(posts.id, id), eq(posts.userId, userId)))
+						.returning(selection);
+					const record = records[0];
 
-					const post = new Post({
-						id: record.id,
-						title: record.title,
-						content: record.content,
-					});
+					if (record === undefined) {
+						return yield* postNotFound(id);
+					}
 
-					return post;
+					return toPost(record);
 				})(),
 
 			update: (userId, id, title, content) =>
 				Effect.fn("PostRepository.Update")(function* () {
-					const record = yield* database
-						.mutation({ operation: "Post.Update", model: "Post" }, (client) =>
-							client.post.update({
-								where: { id_userId: { id, userId } },
-								data: { title, content },
-							}),
-						)
-						.pipe(
-							Effect.catchIf(
-								(error) => error._tag === "RecordRequiredButMissing",
-								() =>
-									Effect.fail(
-										new PostNotFoundError({
-											id,
-											message: "Post not found",
-										}),
-									),
-							),
-						);
+					const records = yield* database
+						.update(posts)
+						.set({ title, content })
+						.where(and(eq(posts.id, id), eq(posts.userId, userId)))
+						.returning(selection);
+					const record = records[0];
 
-					const post = new Post({
-						id: record.id,
-						title: record.title,
-						content: record.content,
-					});
+					if (record === undefined) {
+						return yield* postNotFound(id);
+					}
 
-					return post;
+					return toPost(record);
 				})(),
 		});
 	}),
 );
 
-export { PostRepository, PostRepositoryPrisma };
+export { PostRepository, PostRepositoryDrizzle };

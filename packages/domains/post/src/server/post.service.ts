@@ -1,4 +1,4 @@
-import { DatabaseError } from "@app/database";
+import { type DatabaseError, isRetryableDatabaseError } from "@app/database";
 import { Context, Effect, Layer } from "effect";
 import type { Post } from "../model/post.ts";
 import {
@@ -24,6 +24,18 @@ type DeletePostInput = {
 	readonly userId: string;
 	readonly id: string;
 };
+
+function operationFailed(
+	error: DatabaseError,
+	operation: string,
+	message: string,
+) {
+	return new PostOperationFailedError({
+		operation,
+		message,
+		retryable: isRetryableDatabaseError(error),
+	});
+}
 
 class PostService extends Context.Service<
 	PostService,
@@ -51,17 +63,17 @@ const PostOperationsLive = Layer.effect(
 		return PostService.of({
 			list: (userId) =>
 				Effect.fn("PostService.List")(function* () {
-					const posts = yield* repo.list(userId).pipe(
-						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
-							Effect.fail(
-								new PostOperationFailedError({
-									operation: "Post.List",
-									message: "Something went wrong while fetching posts",
-									retryable: DatabaseError.isRetryable(error),
-								}),
+					const posts = yield* repo
+						.list(userId)
+						.pipe(
+							Effect.mapError((error) =>
+								operationFailed(
+									error,
+									"Post.List",
+									"Something went wrong while fetching posts",
+								),
 							),
-						),
-					);
+						);
 
 					yield* Effect.annotateCurrentSpan({ count: posts.length, userId });
 
@@ -74,17 +86,17 @@ const PostOperationsLive = Layer.effect(
 
 			create: ({ userId, title, content }) =>
 				Effect.fn("PostService.Create")(function* () {
-					const post = yield* repo.create(userId, title, content).pipe(
-						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
-							Effect.fail(
-								new PostOperationFailedError({
-									operation: "Post.Create",
-									message: "Something went wrong while creating a post",
-									retryable: DatabaseError.isRetryable(error),
-								}),
+					const post = yield* repo
+						.create(userId, title, content)
+						.pipe(
+							Effect.mapError((error) =>
+								operationFailed(
+									error,
+									"Post.Create",
+									"Something went wrong while creating a post",
+								),
 							),
-						),
-					);
+						);
 
 					yield* Effect.annotateCurrentSpan({ id: post.id, userId });
 
@@ -97,17 +109,19 @@ const PostOperationsLive = Layer.effect(
 
 			delete: ({ userId, id }) =>
 				Effect.fn("PostService.Delete")(function* () {
-					const post = yield* repo.delete(userId, id).pipe(
-						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
-							Effect.fail(
-								new PostOperationFailedError({
-									operation: "Post.Delete",
-									message: "Something went wrong while deleting a post",
-									retryable: DatabaseError.isRetryable(error),
-								}),
+					const post = yield* repo
+						.delete(userId, id)
+						.pipe(
+							Effect.mapError((error) =>
+								error._tag === "PostNotFound"
+									? error
+									: operationFailed(
+											error,
+											"Post.Delete",
+											"Something went wrong while deleting a post",
+										),
 							),
-						),
-					);
+						);
 
 					yield* Effect.annotateCurrentSpan({ id: post.id, userId });
 
@@ -120,17 +134,19 @@ const PostOperationsLive = Layer.effect(
 
 			update: ({ userId, id, title, content }) =>
 				Effect.fn("PostService.Update")(function* () {
-					const post = yield* repo.update(userId, id, title, content).pipe(
-						Effect.catchIf(DatabaseError.isDatabaseError, (error) =>
-							Effect.fail(
-								new PostOperationFailedError({
-									operation: "Post.Update",
-									message: "Something went wrong while updating a post",
-									retryable: DatabaseError.isRetryable(error),
-								}),
+					const post = yield* repo
+						.update(userId, id, title, content)
+						.pipe(
+							Effect.mapError((error) =>
+								error._tag === "PostNotFound"
+									? error
+									: operationFailed(
+											error,
+											"Post.Update",
+											"Something went wrong while updating a post",
+										),
 							),
-						),
-					);
+						);
 
 					yield* Effect.annotateCurrentSpan({ id: post.id, userId });
 
