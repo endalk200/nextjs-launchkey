@@ -21,6 +21,7 @@ export const user = pgTable(
 		image: text(),
 		createdAt: date("createdAt").defaultNow().notNull(),
 		updatedAt: date("updatedAt")
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
@@ -35,6 +36,7 @@ export const session = pgTable(
 		token: text().notNull(),
 		createdAt: date("createdAt").defaultNow().notNull(),
 		updatedAt: date("updatedAt")
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 		ipAddress: text("ipAddress"),
@@ -71,6 +73,7 @@ export const account = pgTable(
 		password: text(),
 		createdAt: date("createdAt").defaultNow().notNull(),
 		updatedAt: date("updatedAt")
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
@@ -99,6 +102,7 @@ export const verification = pgTable(
 		expiresAt: date("expiresAt").notNull(),
 		createdAt: date("createdAt").defaultNow().notNull(),
 		updatedAt: date("updatedAt")
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
@@ -114,6 +118,7 @@ export const posts = pgTable(
 		content: text().notNull(),
 		createdAt: date("created_at").defaultNow().notNull(),
 		updatedAt: date("updated_at")
+			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},

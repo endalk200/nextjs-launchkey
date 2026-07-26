@@ -25,9 +25,11 @@ bun db:migrate:deploy
 valid `postgres:` or `postgresql:` URL with a host and database name. There is
 no localhost fallback.
 
-Drizzle Kit has a `drop` command for deleting migration files; it is not a
-database reset command. The project intentionally does not expose it as
-`db:migrate:reset`.
+Drizzle Kit 1.x does not provide a `drop` command. Before a migration has been
+applied, discard a bad generated migration by deleting its corresponding folder
+under `packages/database/drizzle`, then generate it again. Deleting the folder
+does not change database state. The project intentionally does not expose a
+`db:migrate:reset` command.
 
 ## Check Better Auth schema changes
 

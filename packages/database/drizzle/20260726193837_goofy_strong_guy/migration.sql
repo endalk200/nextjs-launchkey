@@ -12,7 +12,7 @@ CREATE TABLE "account" (
 	"scope" text,
 	"password" text,
 	"createdAt" timestamp(3) DEFAULT now() NOT NULL,
-	"updatedAt" timestamp(3) NOT NULL
+	"updatedAt" timestamp(3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "posts" (
@@ -21,7 +21,7 @@ CREATE TABLE "posts" (
 	"title" text NOT NULL,
 	"content" text NOT NULL,
 	"created_at" timestamp(3) DEFAULT now() NOT NULL,
-	"updated_at" timestamp(3) NOT NULL
+	"updated_at" timestamp(3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "session" (
@@ -29,7 +29,7 @@ CREATE TABLE "session" (
 	"expiresAt" timestamp(3) NOT NULL,
 	"token" text NOT NULL,
 	"createdAt" timestamp(3) DEFAULT now() NOT NULL,
-	"updatedAt" timestamp(3) NOT NULL,
+	"updatedAt" timestamp(3) DEFAULT now() NOT NULL,
 	"ipAddress" text,
 	"userAgent" text,
 	"userId" text NOT NULL
@@ -42,7 +42,7 @@ CREATE TABLE "user" (
 	"emailVerified" boolean DEFAULT false NOT NULL,
 	"image" text,
 	"createdAt" timestamp(3) DEFAULT now() NOT NULL,
-	"updatedAt" timestamp(3) NOT NULL
+	"updatedAt" timestamp(3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE TABLE "verification" (
@@ -51,7 +51,7 @@ CREATE TABLE "verification" (
 	"value" text NOT NULL,
 	"expiresAt" timestamp(3) NOT NULL,
 	"createdAt" timestamp(3) DEFAULT now() NOT NULL,
-	"updatedAt" timestamp(3) NOT NULL
+	"updatedAt" timestamp(3) DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
 CREATE UNIQUE INDEX "account_issuer_providerAccountId_uidx" ON "account" ("issuer","providerAccountId");--> statement-breakpoint
