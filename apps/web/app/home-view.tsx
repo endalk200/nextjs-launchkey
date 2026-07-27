@@ -8,7 +8,7 @@ export function HomeView({ email }: { email: string }) {
 				<header className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
 					<div>
 						<h1 className="text-2xl font-semibold tracking-normal">Posts</h1>
-						<p className="text-sm text-muted-foreground">{email}</p>
+						<p className="text-sm text-neutral-600">{email}</p>
 					</div>
 					<SignOutControl />
 				</header>
