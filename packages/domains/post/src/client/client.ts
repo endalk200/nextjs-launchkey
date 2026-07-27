@@ -54,6 +54,4 @@ export const PostClient = {
 				client.posts.deletePost({ params: { id } }),
 			),
 		),
-
-	dispose: () => runtime.dispose(),
 };

@@ -12,10 +12,10 @@ import {
 } from "../model/errors.ts";
 import { Post } from "../model/post.ts";
 import { PostRepository } from "./post.repository.ts";
-import { PostOperationsLive, PostService } from "./post.service.ts";
+import { PostServiceLive, PostService } from "./post.service.ts";
 
 const post = new Post({
-	id: "00000000-0000-0000-0000-000000000001",
+	id: "00000000-0000-4000-8000-000000000001",
 	title: "First post",
 	content: "First body",
 });
@@ -31,7 +31,7 @@ function postRepositoryLayer(
 			create: (_userId, title, content) =>
 				Effect.succeed(
 					new Post({
-						id: "00000000-0000-0000-0000-000000000002",
+						id: "00000000-0000-4000-8000-000000000002",
 						title,
 						content,
 					}),
@@ -62,11 +62,11 @@ function runPostService<A, E>(
 	repositoryLayer = postRepositoryLayer(),
 ) {
 	return effect.pipe(
-		Effect.provide(PostOperationsLive.pipe(Layer.provide(repositoryLayer))),
+		Effect.provide(PostServiceLive.pipe(Layer.provide(repositoryLayer))),
 	);
 }
 
-describe("PostOperationsLive", () => {
+describe("PostServiceLive", () => {
 	it.effect("returns successful repository values", () =>
 		Effect.gen(function* () {
 			const service = yield* PostService;
@@ -80,7 +80,7 @@ describe("PostOperationsLive", () => {
 			assert.deepStrictEqual(
 				result,
 				new Post({
-					id: "00000000-0000-0000-0000-000000000002",
+					id: "00000000-0000-4000-8000-000000000002",
 					title: "Created post",
 					content: "Created body",
 				}),
@@ -164,7 +164,7 @@ describe("PostOperationsLive", () => {
 				const error = yield* service
 					.update({
 						userId,
-						id: "00000000-0000-0000-0000-000000000009",
+						id: "00000000-0000-4000-8000-000000000009",
 						title: "Updated post",
 						content: "Updated body",
 					})
@@ -195,7 +195,7 @@ describe("PostOperationsLive", () => {
 
 	it.effect("preserves PostNotFound failures from the repository", () => {
 		const missing = new PostNotFoundError({
-			id: "00000000-0000-0000-0000-000000000009",
+			id: "00000000-0000-4000-8000-000000000009",
 			message: "Post not found",
 		});
 
@@ -205,7 +205,7 @@ describe("PostOperationsLive", () => {
 			const error = yield* service
 				.delete({
 					userId,
-					id: "00000000-0000-0000-0000-000000000009",
+					id: "00000000-0000-4000-8000-000000000009",
 				})
 				.pipe(Effect.flip);
 

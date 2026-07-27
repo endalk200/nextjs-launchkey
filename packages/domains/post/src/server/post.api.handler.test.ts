@@ -1,10 +1,10 @@
 // @vitest-environment node
 
+import { UnauthorizedError } from "@app/auth/api";
 import {
 	makeTestAuthMiddlewareLayer,
 	RejectingAuthMiddlewareTest,
-} from "@app/auth/server/middleware";
-import { UnauthorizedError } from "@app/auth/api";
+} from "@app/auth/testing";
 import { assert, describe, it } from "@effect/vitest";
 import { Effect, Layer } from "effect";
 import { HttpServer } from "effect/unstable/http";
@@ -16,7 +16,7 @@ import { PostHandlers } from "./post.api.handler.ts";
 import { PostService } from "./post.service.ts";
 
 const existingPost = new Post({
-	id: "00000000-0000-0000-0000-000000000001",
+	id: "00000000-0000-4000-8000-000000000001",
 	title: "First post",
 	content: "First body",
 });
@@ -34,7 +34,7 @@ function postServiceLayer(overrides: Partial<PostService["Service"]> = {}) {
 			create: ({ title, content }) =>
 				Effect.succeed(
 					new Post({
-						id: "00000000-0000-0000-0000-000000000002",
+						id: "00000000-0000-4000-8000-000000000002",
 						title,
 						content,
 					}),
@@ -101,7 +101,7 @@ describe("PostHandlers", () => {
 			assert.deepStrictEqual(
 				result,
 				new Post({
-					id: "00000000-0000-0000-0000-000000000002",
+					id: "00000000-0000-4000-8000-000000000002",
 					title: "Created post",
 					content: "Created body",
 				}),
@@ -109,7 +109,7 @@ describe("PostHandlers", () => {
 		}).pipe(runApi),
 	);
 
-	it.effect("passes PATCH /api/posts/:id inputs to the service", () =>
+	it.effect("passes PUT /api/posts/:id inputs to the service", () =>
 		Effect.gen(function* () {
 			const client = yield* HttpApiTest.groups(PostApi, ["posts"]);
 

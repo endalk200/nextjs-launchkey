@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { Database, DatabaseLive, sql } from "@app/database";
 import { user } from "@app/database/schema";
 import { assert, describe, it } from "@effect/vitest";
@@ -5,8 +7,6 @@ import {
 	PostgreSqlContainer,
 	type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
-import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { Effect, Layer, ManagedRuntime } from "effect";
 import { afterAll, beforeAll, beforeEach } from "vitest";
 import { PostNotFoundError } from "../model/errors.ts";
@@ -188,14 +188,14 @@ describe("PostRepositoryDrizzle integration", () => {
 			const error = yield* repo
 				.update(
 					userId,
-					"00000000-0000-0000-0000-000000000001",
+					"00000000-0000-4000-8000-000000000001",
 					"Updated post",
 					"Updated body",
 				)
 				.pipe(Effect.flip);
 
 			assert.instanceOf(error, PostNotFoundError);
-			assert.strictEqual(error.id, "00000000-0000-0000-0000-000000000001");
+			assert.strictEqual(error.id, "00000000-0000-4000-8000-000000000001");
 		}).pipe(runRepository),
 	);
 
@@ -204,11 +204,11 @@ describe("PostRepositoryDrizzle integration", () => {
 			const repo = yield* PostRepository;
 
 			const error = yield* repo
-				.delete(userId, "00000000-0000-0000-0000-000000000001")
+				.delete(userId, "00000000-0000-4000-8000-000000000001")
 				.pipe(Effect.flip);
 
 			assert.instanceOf(error, PostNotFoundError);
-			assert.strictEqual(error.id, "00000000-0000-0000-0000-000000000001");
+			assert.strictEqual(error.id, "00000000-0000-4000-8000-000000000001");
 		}).pipe(runRepository),
 	);
 });

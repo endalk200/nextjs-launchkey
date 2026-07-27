@@ -6,9 +6,9 @@ import { PostEmptyState } from "./empty-state.tsx";
 import { PostForm } from "./form.tsx";
 import { PostListHeader } from "./header.tsx";
 import { PostListLoading } from "./loading.tsx";
-import type { PostFormValue, PostListPost } from "./types.ts";
 import { usePostListState } from "./state.ts";
 import { PostTable } from "./table.tsx";
+import type { PostFormValue, PostListPost } from "./types.ts";
 
 export function PostList({
 	posts,
