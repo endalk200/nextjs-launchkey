@@ -80,11 +80,14 @@ describe("synchronizePostHogSession", () => {
 		expect(client.identify).not.toHaveBeenCalled();
 	});
 
-	it("clears identity after a confirmed anonymous session", () => {
+	it.each([
+		null,
+		undefined,
+	])("clears identity after a confirmed anonymous session without an error", (error) => {
 		const client = makeClient("user-1");
 
 		synchronizePostHogSession(client, {
-			error: null,
+			error,
 			isPending: false,
 			userId: undefined,
 		});
