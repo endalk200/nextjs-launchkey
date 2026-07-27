@@ -8,7 +8,7 @@ type ServerLogOptions = {
 	readonly severity?: "error" | "info" | "warn";
 };
 
-function errorAttributes(error: unknown): Record<string, string> {
+export function getExceptionAttributes(error: unknown): Record<string, string> {
 	if (!(error instanceof Error)) {
 		return { "exception.message": String(error) };
 	}
@@ -42,7 +42,7 @@ export function emitServerLog({
 	logs.getLogger("nextjs-launchkey-web").emit({
 		attributes: {
 			...attributes,
-			...(error === undefined ? {} : errorAttributes(error)),
+			...(error === undefined ? {} : getExceptionAttributes(error)),
 			...(activeSpan
 				? { spanId: activeSpan.spanId, traceId: activeSpan.traceId }
 				: {}),
