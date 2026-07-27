@@ -1,9 +1,9 @@
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import {
 	PostgreSqlContainer,
 	type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
-import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { Client } from "pg";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 
@@ -81,13 +81,8 @@ describe("Drizzle baseline migration", () => {
 			SELECT table_name, column_name, column_default
 			FROM information_schema.columns
 			WHERE table_schema = 'public'
-				AND (
-					(table_name = 'posts' AND column_name = 'updated_at')
-					OR (
-						table_name IN ('account', 'session', 'user', 'verification')
-						AND column_name = 'updatedAt'
-					)
-				)
+				AND table_name IN ('account', 'posts', 'session', 'user', 'verification')
+				AND column_name = 'updatedAt'
 			ORDER BY table_name
 		`);
 		const insertedPost = await client.query<{
@@ -99,11 +94,11 @@ describe("Drizzle baseline migration", () => {
 				VALUES ('migration-default-user', 'Migration User', 'migration@example.com')
 				RETURNING "id"
 			)
-			INSERT INTO "posts" ("user_id", "title", "content")
+			INSERT INTO "posts" ("userId", "title", "content")
 			SELECT "id", 'Migration post', 'Database defaults' FROM inserted_user
 			RETURNING
 				"id",
-				"created_at" IS NOT NULL AND "updated_at" IS NOT NULL AS has_timestamps
+				"createdAt" IS NOT NULL AND "updatedAt" IS NOT NULL AS has_timestamps
 		`);
 		const migrationCount = await client.query<{ count: number }>(
 			`SELECT count(*)::int AS count FROM "drizzle"."__drizzle_migrations"`,
@@ -128,7 +123,7 @@ describe("Drizzle baseline migration", () => {
 			},
 			{
 				table_name: "posts",
-				column_name: "updated_at",
+				column_name: "updatedAt",
 				column_default: "now()",
 			},
 			{
@@ -153,6 +148,6 @@ describe("Drizzle baseline migration", () => {
 				has_timestamps: true,
 			},
 		]);
-		expect(migrationCount.rows).toEqual([{ count: 1 }]);
+		expect(migrationCount.rows).toEqual([{ count: 2 }]);
 	});
 });

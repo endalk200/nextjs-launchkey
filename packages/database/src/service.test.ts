@@ -1,6 +1,6 @@
 import { assert, describe, it } from "@effect/vitest";
 import { EffectDrizzleQueryError } from "drizzle-orm/effect-core";
-import { Cause, Effect } from "effect";
+import { Cause, ConfigProvider, Effect } from "effect";
 import {
 	ConnectionError,
 	SqlError,
@@ -25,19 +25,38 @@ describe("DatabaseLive", () => {
 
 	it.effect("requires DATABASE_URL", () =>
 		Effect.gen(function* () {
-			const originalDatabaseUrl = process.env.DATABASE_URL;
-			delete process.env.DATABASE_URL;
-
 			const error = yield* Database.pipe(
 				Effect.provide(DatabaseLive),
+				Effect.provideService(
+					ConfigProvider.ConfigProvider,
+					ConfigProvider.fromEnv({ env: {} }),
+				),
 				Effect.flip,
 			);
 
-			if (originalDatabaseUrl !== undefined) {
-				process.env.DATABASE_URL = originalDatabaseUrl;
-			}
+			assert.strictEqual(error._tag, "ConfigError");
+		}),
+	);
+
+	it.effect("redacts invalid DATABASE_URL values", () =>
+		Effect.gen(function* () {
+			const password = "do-not-leak";
+			const error = yield* Database.pipe(
+				Effect.provide(DatabaseLive),
+				Effect.provideService(
+					ConfigProvider.ConfigProvider,
+					ConfigProvider.fromEnv({
+						env: {
+							DATABASE_URL: `mysql://user:${password}@localhost:3306/app`,
+						},
+					}),
+				),
+				Effect.flip,
+			);
 
 			assert.strictEqual(error._tag, "ConfigError");
+			assert.notInclude(String(error), password);
+			assert.include(String(error), "<redacted>");
 		}),
 	);
 });

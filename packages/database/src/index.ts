@@ -1,3 +1,16 @@
+export { and, asc, eq, like, sql } from "drizzle-orm";
+export {
+	DatabaseUrlConfig,
+	DatabaseUrlError,
+	DatabaseUrlSchema,
+	isDatabaseUrl,
+	parseDatabaseUrl,
+	requireDatabaseUrl,
+} from "./database-url.ts";
+export type { DatabaseUrl } from "./database-url.ts";
+export type { DatabaseError } from "./errors.ts";
+export { isRetryableDatabaseError } from "./errors.ts";
+export type { DatabaseClient } from "./service.ts";
 export {
 	createNodeDrizzleClient,
 	DATABASE_CONNECT_TIMEOUT_MS,
@@ -8,13 +21,3 @@ export {
 	EFFECT_DATABASE_POOL_MAX,
 	NODE_DATABASE_POOL_MAX,
 } from "./service.ts";
-export type { DatabaseClient } from "./service.ts";
-export {
-	DatabaseUrlError,
-	isDatabaseUrl,
-	parseDatabaseUrl,
-	requireDatabaseUrl,
-} from "./database-url.ts";
-export { isRetryableDatabaseError } from "./errors.ts";
-export type { DatabaseError } from "./errors.ts";
-export { and, asc, eq, like, sql } from "drizzle-orm";
