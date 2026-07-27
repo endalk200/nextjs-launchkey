@@ -1,5 +1,5 @@
 import { Context, Schema } from "effect";
-import { HttpApiMiddleware } from "effect/unstable/httpapi";
+import { HttpApiMiddleware, HttpApiSecurity } from "effect/unstable/httpapi";
 
 export class AuthenticatedUser extends Context.Service<
 	AuthenticatedUser,
@@ -18,6 +18,16 @@ export class UnauthorizedError extends Schema.TaggedErrorClass<UnauthorizedError
 	{ httpApiStatus: 401 },
 ) {}
 
+export const BetterAuthSessionCookie = HttpApiSecurity.apiKey({
+	key: "better-auth.session_token",
+	in: "cookie",
+});
+
+export const BetterAuthSecureSessionCookie = HttpApiSecurity.apiKey({
+	key: "__Secure-better-auth.session_token",
+	in: "cookie",
+});
+
 export class AuthMiddleware extends HttpApiMiddleware.Service<
 	AuthMiddleware,
 	{
@@ -25,4 +35,8 @@ export class AuthMiddleware extends HttpApiMiddleware.Service<
 	}
 >()("app/AuthMiddleware", {
 	error: UnauthorizedError,
+	security: {
+		betterAuthSession: BetterAuthSessionCookie,
+		betterAuthSecureSession: BetterAuthSecureSessionCookie,
+	},
 }) {}

@@ -90,4 +90,33 @@ describe("PostApi", () => {
 			assert.property(item?.delete?.responses ?? {}, "404");
 		}),
 	);
+
+	it.effect("publishes the Better Auth session-cookie requirement", () =>
+		Effect.sync(() => {
+			const specification = OpenApi.fromApi(PostApi);
+			const collection = specification.paths["/api/posts"];
+			const item = specification.paths["/api/posts/{id}"];
+			const expectedSecurity: Array<Record<string, string[]>> = [
+				{ betterAuthSession: [] },
+				{ betterAuthSecureSession: [] },
+			];
+
+			assert.deepStrictEqual(specification.components.securitySchemes, {
+				betterAuthSession: {
+					type: "apiKey",
+					name: "better-auth.session_token",
+					in: "cookie",
+				},
+				betterAuthSecureSession: {
+					type: "apiKey",
+					name: "__Secure-better-auth.session_token",
+					in: "cookie",
+				},
+			});
+			assert.deepStrictEqual(collection?.get?.security, expectedSecurity);
+			assert.deepStrictEqual(collection?.post?.security, expectedSecurity);
+			assert.deepStrictEqual(item?.patch?.security, expectedSecurity);
+			assert.deepStrictEqual(item?.delete?.security, expectedSecurity);
+		}),
+	);
 });
