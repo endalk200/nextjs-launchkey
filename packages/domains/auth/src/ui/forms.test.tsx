@@ -1,12 +1,10 @@
 import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { describe, expect, it, vi } from "vitest";
-import {
-	ForgotPasswordForm,
-	ResetPasswordForm,
-	SignInForm,
-	SignOutButton,
-	SignUpForm,
-} from "./forms.tsx";
+import { ForgotPasswordForm } from "./forgot-password-form.tsx";
+import { ResetPasswordForm } from "./reset-password-form.tsx";
+import { SignInForm } from "./sign-in-form.tsx";
+import { SignOutButton } from "./sign-out-button.tsx";
+import { SignUpForm } from "./sign-up-form.tsx";
 
 describe("auth forms", () => {
 	it("validates sign-in email on blur", async () => {

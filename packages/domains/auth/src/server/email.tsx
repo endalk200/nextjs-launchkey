@@ -1,3 +1,4 @@
+import { appConfig } from "@app/config/env";
 import {
 	Body,
 	Button,
@@ -9,7 +10,6 @@ import {
 	Section,
 	Text,
 } from "@react-email/components";
-import { appConfig } from "@app/config/env";
 import { render } from "@react-email/render";
 import { Resend } from "resend";
 

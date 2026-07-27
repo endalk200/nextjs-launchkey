@@ -1,16 +1,13 @@
 export {
-	auth,
 	AuthMiddlewareLive,
-	authRouteHandlers,
+	createAuthOptions,
+	getAuth,
+	getAuthRouteHandlers,
 } from "./server/auth.ts";
 export {
-	AuthMiddleware,
-	makeAuthMiddlewareLayer,
-	makeTestAuthMiddlewareLayer,
-	RejectingAuthMiddlewareTest,
-} from "./server/auth-middleware.ts";
-export {
 	AuthenticatedUser,
+	AuthMiddleware,
 	AuthUnavailableError,
+	makeAuthMiddlewareLayer,
 	UnauthorizedError,
-} from "./server/current-user.ts";
+} from "./server/auth-middleware.ts";

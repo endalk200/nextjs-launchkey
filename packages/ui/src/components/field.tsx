@@ -1,11 +1,10 @@
 "use client";
 
-import { useMemo } from "react";
 import { cva, type VariantProps } from "class-variance-authority";
-
-import { cn } from "#lib/utils";
+import { useMemo } from "react";
 import { Label } from "#components/label";
 import { Separator } from "#components/separator";
+import { cn } from "#lib/utils";
 
 function FieldSet({ className, ...props }: React.ComponentProps<"fieldset">) {
 	return (
@@ -73,9 +72,11 @@ function Field({
 	className,
 	orientation = "vertical",
 	...props
-}: React.ComponentProps<"fieldset"> & VariantProps<typeof fieldVariants>) {
+}: React.ComponentProps<"div"> & VariantProps<typeof fieldVariants>) {
 	return (
-		<fieldset
+		// biome-ignore lint/a11y/useSemanticElements: a nested <fieldset> inside FieldSet would cascade `disabled` and carry the wrong semantics
+		<div
+			role="group"
 			data-slot="field"
 			data-orientation={orientation}
 			className={cn(fieldVariants({ orientation }), className)}
@@ -117,7 +118,7 @@ function FieldLabel({
 function FieldTitle({ className, ...props }: React.ComponentProps<"div">) {
 	return (
 		<div
-			data-slot="field-label"
+			data-slot="field-title"
 			className={cn(
 				"flex w-fit items-center gap-2 text-sm font-medium group-data-[disabled=true]/field:opacity-50",
 				className,
@@ -193,7 +194,7 @@ function FieldError({
 			...new Map(errors.map((error) => [error?.message, error])).values(),
 		];
 
-		if (uniqueErrors?.length === 1) {
+		if (uniqueErrors.length === 1) {
 			return uniqueErrors[0]?.message;
 		}
 
@@ -225,13 +226,13 @@ function FieldError({
 
 export {
 	Field,
-	FieldLabel,
+	FieldContent,
 	FieldDescription,
 	FieldError,
 	FieldGroup,
+	FieldLabel,
 	FieldLegend,
 	FieldSeparator,
 	FieldSet,
-	FieldContent,
 	FieldTitle,
 };

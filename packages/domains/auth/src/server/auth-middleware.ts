@@ -1,11 +1,11 @@
+import { Effect, Layer } from "effect";
+import { HttpServerRequest } from "effect/unstable/http";
 import {
 	AuthenticatedUser,
 	AuthMiddleware,
 	AuthUnavailableError,
 	UnauthorizedError,
 } from "../api.ts";
-import { Effect, Layer } from "effect";
-import { HttpServerRequest } from "effect/unstable/http";
 
 type SessionUser = {
 	readonly id: string;
@@ -19,7 +19,7 @@ type AuthSession = {
 
 export type ResolveAuthSession = (headers: Headers) => Promise<AuthSession>;
 
-type AuthHandler = AuthMiddleware["Service"]["betterAuthSession"];
+export type AuthHandler = AuthMiddleware["Service"]["betterAuthSession"];
 
 function unauthorized() {
 	return new UnauthorizedError({
@@ -61,6 +61,16 @@ export function makeAuthMiddlewareLayer(resolveSession: ResolveAuthSession) {
 				return yield* Effect.fail(unauthorized());
 			}
 
+			const rawSessionId = request.headers["x-posthog-session-id"];
+			const sessionId =
+				rawSessionId && rawSessionId.length <= 128 ? rawSessionId : undefined;
+			const telemetry = {
+				posthogDistinctId: session.user.id,
+				...(sessionId ? { sessionId } : {}),
+			};
+
+			yield* Effect.annotateCurrentSpan(telemetry);
+
 			return yield* effect.pipe(
 				Effect.provideService(
 					AuthenticatedUser,
@@ -70,6 +80,8 @@ export function makeAuthMiddlewareLayer(resolveSession: ResolveAuthSession) {
 						name: session.user.name ?? session.user.email,
 					}),
 				),
+				Effect.annotateLogs(telemetry),
+				Effect.annotateSpans(telemetry),
 			);
 		});
 
@@ -80,33 +92,6 @@ export function makeAuthMiddlewareLayer(resolveSession: ResolveAuthSession) {
 		}),
 	);
 }
-
-export function makeTestAuthMiddlewareLayer(
-	user: AuthenticatedUser["Service"] = AuthenticatedUser.of({
-		id: "test-user",
-		email: "test@example.com",
-		name: "Test User",
-	}),
-) {
-	const authenticate: AuthHandler = (effect) =>
-		effect.pipe(Effect.provideService(AuthenticatedUser, user));
-
-	return Layer.succeed(
-		AuthMiddleware,
-		AuthMiddleware.of({
-			betterAuthSession: authenticate,
-		}),
-	);
-}
-
-const reject: AuthHandler = () => Effect.fail(unauthorized());
-
-export const RejectingAuthMiddlewareTest = Layer.succeed(
-	AuthMiddleware,
-	AuthMiddleware.of({
-		betterAuthSession: reject,
-	}),
-);
 
 export {
 	AuthenticatedUser,

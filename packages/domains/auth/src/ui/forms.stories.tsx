@@ -1,12 +1,10 @@
 import type { Meta, StoryObj } from "@storybook/nextjs-vite";
 
-import {
-	ForgotPasswordForm,
-	ResetPasswordForm,
-	SignInForm,
-	SignOutButton,
-	SignUpForm,
-} from "./forms.tsx";
+import { ForgotPasswordForm } from "./forgot-password-form.tsx";
+import { ResetPasswordForm } from "./reset-password-form.tsx";
+import { SignInForm } from "./sign-in-form.tsx";
+import { SignOutButton } from "./sign-out-button.tsx";
+import { SignUpForm } from "./sign-up-form.tsx";
 
 const meta = {
 	title: "Auth/Forms",
