@@ -86,8 +86,12 @@ describe("PostApi", () => {
 			assert.isDefined(item?.patch);
 			assert.isDefined(item?.delete);
 			assert.property(collection?.post?.responses ?? {}, "201");
+			assert.property(collection?.get?.responses ?? {}, "503");
+			assert.property(collection?.post?.responses ?? {}, "503");
 			assert.property(item?.patch?.responses ?? {}, "404");
+			assert.property(item?.patch?.responses ?? {}, "503");
 			assert.property(item?.delete?.responses ?? {}, "404");
+			assert.property(item?.delete?.responses ?? {}, "503");
 		}),
 	);
 
@@ -98,7 +102,6 @@ describe("PostApi", () => {
 			const item = specification.paths["/api/posts/{id}"];
 			const expectedSecurity: Array<Record<string, string[]>> = [
 				{ betterAuthSession: [] },
-				{ betterAuthSecureSession: [] },
 			];
 
 			assert.deepStrictEqual(specification.components.securitySchemes, {
@@ -106,11 +109,8 @@ describe("PostApi", () => {
 					type: "apiKey",
 					name: "better-auth.session_token",
 					in: "cookie",
-				},
-				betterAuthSecureSession: {
-					type: "apiKey",
-					name: "__Secure-better-auth.session_token",
-					in: "cookie",
+					description:
+						"Better Auth session cookie. HTTPS deployments use the __Secure- prefix.",
 				},
 			});
 			assert.deepStrictEqual(collection?.get?.security, expectedSecurity);
