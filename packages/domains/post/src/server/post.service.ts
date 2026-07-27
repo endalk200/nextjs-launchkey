@@ -1,10 +1,10 @@
 import { type DatabaseError, isRetryableDatabaseError } from "@app/database";
 import { Context, Effect, Layer } from "effect";
-import type { Post } from "../model/post.ts";
 import {
 	PostNotFoundError,
 	PostOperationFailedError,
 } from "../model/errors.ts";
+import type { Post } from "../model/post.ts";
 import { PostRepository } from "./post.repository.ts";
 
 type CreatePostInput = {
@@ -25,18 +25,6 @@ type DeletePostInput = {
 	readonly id: string;
 };
 
-function operationFailed(
-	error: DatabaseError,
-	operation: string,
-	message: string,
-) {
-	return new PostOperationFailedError({
-		operation,
-		message,
-		retryable: isRetryableDatabaseError(error),
-	});
-}
-
 class PostService extends Context.Service<
 	PostService,
 	{
@@ -53,111 +41,113 @@ class PostService extends Context.Service<
 			input: UpdatePostInput,
 		) => Effect.Effect<Post, PostNotFoundError | PostOperationFailedError>;
 	}
->()("app/PostOperations") {}
+>()("app/PostService") {}
 
-const PostOperationsLive = Layer.effect(
+/** Maps a repository failure to the domain-level operation error. */
+const operationFailed =
+	(operation: string, message: string) => (error: DatabaseError) =>
+		new PostOperationFailedError({
+			operation,
+			message,
+			retryable: isRetryableDatabaseError(error),
+		});
+
+/** Passes not-found errors through untouched while mapping database failures. */
+const keepNotFound =
+	(map: (error: DatabaseError) => PostOperationFailedError) =>
+	(error: DatabaseError | PostNotFoundError) =>
+		error._tag === "PostNotFound" ? error : map(error);
+
+/**
+ * Wraps an operation in a named span and annotates span and log on success,
+ * keeping the individual service methods free of tracing boilerplate.
+ */
+const traced =
+	<A, E>(
+		operation: string,
+		successMessage: string,
+		annotate: (value: A) => Record<string, string | number>,
+	) =>
+	(effect: Effect.Effect<A, E>): Effect.Effect<A, E> =>
+		Effect.fn(`PostService.${operation}`)(function* () {
+			const value = yield* effect;
+			const annotations = annotate(value);
+
+			yield* Effect.annotateCurrentSpan(annotations);
+			yield* Effect.logInfo(successMessage).pipe(
+				Effect.annotateLogs(annotations),
+			);
+
+			return value;
+		})();
+
+const PostServiceLive = Layer.effect(
 	PostService,
 	Effect.gen(function* () {
 		const repo = yield* PostRepository;
 
 		return PostService.of({
 			list: (userId) =>
-				Effect.fn("PostService.List")(function* () {
-					const posts = yield* repo
-						.list(userId)
-						.pipe(
-							Effect.mapError((error) =>
-								operationFailed(
-									error,
-									"Post.List",
-									"Something went wrong while fetching posts",
-								),
-							),
-						);
-
-					yield* Effect.annotateCurrentSpan({ count: posts.length, userId });
-
-					yield* Effect.logInfo("Listed posts").pipe(
-						Effect.annotateLogs({ count: posts.length, userId }),
-					);
-
-					return posts;
-				})(),
+				repo.list(userId).pipe(
+					Effect.mapError(
+						operationFailed(
+							"Post.List",
+							"Something went wrong while fetching posts",
+						),
+					),
+					traced("List", "Listed posts", (posts) => ({
+						count: posts.length,
+						userId,
+					})),
+				),
 
 			create: ({ userId, title, content }) =>
-				Effect.fn("PostService.Create")(function* () {
-					const post = yield* repo
-						.create(userId, title, content)
-						.pipe(
-							Effect.mapError((error) =>
-								operationFailed(
-									error,
-									"Post.Create",
-									"Something went wrong while creating a post",
-								),
-							),
-						);
-
-					yield* Effect.annotateCurrentSpan({ id: post.id, userId });
-
-					yield* Effect.logInfo("Created post").pipe(
-						Effect.annotateLogs({ id: post.id, userId }),
-					);
-
-					return post;
-				})(),
+				repo.create(userId, title, content).pipe(
+					Effect.mapError(
+						operationFailed(
+							"Post.Create",
+							"Something went wrong while creating a post",
+						),
+					),
+					traced("Create", "Created post", (post) => ({
+						id: post.id,
+						userId,
+					})),
+				),
 
 			delete: ({ userId, id }) =>
-				Effect.fn("PostService.Delete")(function* () {
-					const post = yield* repo
-						.delete(userId, id)
-						.pipe(
-							Effect.mapError((error) =>
-								error._tag === "PostNotFound"
-									? error
-									: operationFailed(
-											error,
-											"Post.Delete",
-											"Something went wrong while deleting a post",
-										),
+				repo.delete(userId, id).pipe(
+					Effect.mapError(
+						keepNotFound(
+							operationFailed(
+								"Post.Delete",
+								"Something went wrong while deleting a post",
 							),
-						);
-
-					yield* Effect.annotateCurrentSpan({ id: post.id, userId });
-
-					yield* Effect.logInfo("Deleted post").pipe(
-						Effect.annotateLogs({ id: post.id, userId }),
-					);
-
-					return post;
-				})(),
+						),
+					),
+					traced("Delete", "Deleted post", (post) => ({
+						id: post.id,
+						userId,
+					})),
+				),
 
 			update: ({ userId, id, title, content }) =>
-				Effect.fn("PostService.Update")(function* () {
-					const post = yield* repo
-						.update(userId, id, title, content)
-						.pipe(
-							Effect.mapError((error) =>
-								error._tag === "PostNotFound"
-									? error
-									: operationFailed(
-											error,
-											"Post.Update",
-											"Something went wrong while updating a post",
-										),
+				repo.update(userId, id, title, content).pipe(
+					Effect.mapError(
+						keepNotFound(
+							operationFailed(
+								"Post.Update",
+								"Something went wrong while updating a post",
 							),
-						);
-
-					yield* Effect.annotateCurrentSpan({ id: post.id, userId });
-
-					yield* Effect.logInfo("Updated post").pipe(
-						Effect.annotateLogs({ id: post.id, userId }),
-					);
-
-					return post;
-				})(),
+						),
+					),
+					traced("Update", "Updated post", (post) => ({
+						id: post.id,
+						userId,
+					})),
+				),
 		});
 	}),
 );
 
-export { PostService, PostOperationsLive };
+export { PostService, PostServiceLive };

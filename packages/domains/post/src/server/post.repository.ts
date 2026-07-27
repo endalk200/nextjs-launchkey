@@ -1,4 +1,4 @@
-import { Database, type DatabaseError, and, asc, eq } from "@app/database";
+import { and, asc, Database, type DatabaseError, eq } from "@app/database";
 import { posts } from "@app/database/schema";
 import { Context, Effect, Layer } from "effect";
 import { PostNotFoundError } from "../model/errors.ts";
@@ -26,7 +26,7 @@ class PostRepository extends Context.Service<
 			content: string,
 		) => Effect.Effect<Post, DatabaseError | PostNotFoundError>;
 	}
->()("app/PostRepo") {}
+>()("app/PostRepository") {}
 
 const selection = {
 	id: posts.id,
@@ -72,7 +72,9 @@ const PostRepositoryDrizzle = Layer.effect(
 					const record = records[0];
 
 					if (record === undefined) {
-						return yield* Effect.die("Post insert returned no record");
+						return yield* Effect.die(
+							new Error("Post insert returned no record"),
+						);
 					}
 
 					return toPost(record);

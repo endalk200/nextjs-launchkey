@@ -14,7 +14,6 @@ vi.mock("./client.ts", () => ({
 	PostClient: {
 		create: vi.fn(),
 		delete: vi.fn(),
-		dispose: vi.fn(),
 		list: vi.fn(),
 		update: vi.fn(),
 	},

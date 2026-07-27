@@ -5,12 +5,6 @@ import { PostClient } from "./client.ts";
 
 const postsQueryKey = ["posts"] as const;
 
-if (typeof window !== "undefined") {
-	window.addEventListener("pagehide", () => void PostClient.dispose(), {
-		once: true,
-	});
-}
-
 export function usePosts() {
 	return useQuery({
 		queryKey: postsQueryKey,

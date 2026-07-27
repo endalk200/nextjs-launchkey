@@ -55,7 +55,7 @@ test("manages posts through the browser", async ({ page }) => {
 	const updateResponsePromise = page.waitForResponse(
 		(response) =>
 			/^\/api\/posts\/[^/]+$/.test(new URL(response.url()).pathname) &&
-			response.request().method() === "PATCH",
+			response.request().method() === "PUT",
 	);
 	await page.getByTestId("post-form-save-button").click();
 

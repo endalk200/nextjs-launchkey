@@ -7,13 +7,23 @@ export class PostOperationFailedError extends Schema.TaggedErrorClass<PostOperat
 		message: Schema.String,
 		retryable: Schema.Boolean,
 	},
+	{
+		description:
+			"The post operation failed because an underlying dependency was unavailable or returned an unexpected result.",
+	},
 ) {}
 
 export class PostNotFoundError extends Schema.TaggedErrorClass<PostNotFoundError>()(
 	"PostNotFound",
 	{
-		id: Schema.String,
+		id: Schema.String.check(Schema.isUUID()).annotate({
+			description: "Identifier of the post that could not be found.",
+		}),
 		message: Schema.String,
+	},
+	{
+		description:
+			"The requested post does not exist or is not owned by the authenticated user.",
 	},
 ) {}
 

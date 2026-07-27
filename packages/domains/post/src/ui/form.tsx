@@ -1,4 +1,3 @@
-import { useForm } from "@tanstack/react-form";
 import { Button } from "@app/ui/components/button";
 import {
 	Field,
@@ -8,25 +7,23 @@ import {
 } from "@app/ui/components/field";
 import { Input } from "@app/ui/components/input";
 import { Textarea } from "@app/ui/components/textarea";
+import { useForm } from "@tanstack/react-form";
 import { Schema } from "effect";
 import type { PostFormValue } from "./types.ts";
 
 const requiredString = (message: string) =>
-	Schema.toStandardSchemaV1(
-		Schema.String.check(
-			Schema.makeFilter((value) => value.trim().length > 0 || message),
-		),
+	Schema.String.check(
+		Schema.makeFilter((value: string) => value.trim().length > 0 || message),
 	);
 
-const postFormSchema = Schema.toStandardSchemaV1(
-	Schema.Struct({
-		title: requiredString("Title is required."),
-		content: requiredString("Content is required."),
-	}),
-);
+const title = requiredString("Title is required.");
+const content = requiredString("Content is required.");
 
-const titleSchema = requiredString("Title is required.");
-const contentSchema = requiredString("Content is required.");
+const titleSchema = Schema.toStandardSchemaV1(title);
+const contentSchema = Schema.toStandardSchemaV1(content);
+const postFormSchema = Schema.toStandardSchemaV1(
+	Schema.Struct({ title, content }),
+);
 
 export function PostForm({
 	initialValue,
