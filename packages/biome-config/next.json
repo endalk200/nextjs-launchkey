@@ -1,12 +1,11 @@
 {
 	"$schema": "https://biomejs.dev/schemas/2.4.15/schema.json",
 	"root": false,
-	"vcs": { "enabled": true, "clientKind": "git", "useIgnoreFile": true },
+	"extends": ["./base.json"],
 	"files": {
 		"ignoreUnknown": true,
 		"includes": ["**", "!node_modules", "!.next", "!dist", "!build"]
 	},
-	"formatter": { "enabled": true, "indentStyle": "tab" },
 	"linter": {
 		"enabled": true,
 		"rules": {
