@@ -1,3 +1,5 @@
+import { execFileSync } from "node:child_process";
+import { fileURLToPath } from "node:url";
 import { createNodeDrizzleClient, sql } from "@app/database";
 import {
 	account,
@@ -12,8 +14,6 @@ import {
 	type StartedPostgreSqlContainer,
 } from "@testcontainers/postgresql";
 import { betterAuth } from "better-auth/minimal";
-import { execFileSync } from "node:child_process";
-import { fileURLToPath } from "node:url";
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest";
 
 let container: StartedPostgreSqlContainer;

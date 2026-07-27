@@ -7,8 +7,8 @@
 		"./api": "./src/api.ts",
 		"./client": "./src/client.ts",
 		"./server": "./src/server.ts",
-		"./server/middleware": "./src/server/auth-middleware.ts",
-		"./test": "./src/server/test-auth.ts"
+		"./testing": "./src/testing/middleware.ts",
+		"./testing/e2e": "./src/testing/e2e.ts"
 	},
 	"scripts": {
 		"lint": "biome lint .",
@@ -32,8 +32,7 @@
 		"drizzle-orm": "1.0.0-rc.4",
 		"effect": "4.0.0-beta.101",
 		"react": "^19.2.6",
-		"resend": "^6.12.4",
-		"zod": "^4.4.3"
+		"resend": "^6.12.4"
 	},
 	"devDependencies": {
 		"@app/biome-config": "*",
