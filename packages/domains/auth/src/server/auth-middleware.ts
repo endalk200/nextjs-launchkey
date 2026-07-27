@@ -1,9 +1,10 @@
 import {
 	AuthenticatedUser,
 	AuthMiddleware,
+	AuthUnavailableError,
 	UnauthorizedError,
 } from "../api.ts";
-import { Effect, Layer, Redacted } from "effect";
+import { Effect, Layer } from "effect";
 import { HttpServerRequest } from "effect/unstable/http";
 
 type SessionUser = {
@@ -26,6 +27,12 @@ function unauthorized() {
 	});
 }
 
+function unavailable() {
+	return new AuthUnavailableError({
+		message: "Authentication is temporarily unavailable.",
+	});
+}
+
 function toWebHeaders(headers: Record<string, string>) {
 	const webHeaders = new Headers();
 
@@ -37,17 +44,18 @@ function toWebHeaders(headers: Record<string, string>) {
 }
 
 export function makeAuthMiddlewareLayer(resolveSession: ResolveAuthSession) {
-	const authenticate: AuthHandler = (effect, { credential }) =>
+	const authenticate: AuthHandler = (effect) =>
 		Effect.gen(function* () {
-			if (Redacted.value(credential).length === 0) {
-				return yield* Effect.fail(unauthorized());
-			}
-
 			const request = yield* HttpServerRequest.HttpServerRequest;
 			const session = yield* Effect.tryPromise({
 				try: () => resolveSession(toWebHeaders(request.headers)),
-				catch: unauthorized,
-			});
+				catch: (cause) => cause,
+			}).pipe(
+				Effect.tapError((cause) =>
+					Effect.logError("Auth session lookup failed", cause),
+				),
+				Effect.mapError(unavailable),
+			);
 
 			if (!session) {
 				return yield* Effect.fail(unauthorized());
@@ -69,7 +77,6 @@ export function makeAuthMiddlewareLayer(resolveSession: ResolveAuthSession) {
 		AuthMiddleware,
 		AuthMiddleware.of({
 			betterAuthSession: authenticate,
-			betterAuthSecureSession: authenticate,
 		}),
 	);
 }
@@ -88,7 +95,6 @@ export function makeTestAuthMiddlewareLayer(
 		AuthMiddleware,
 		AuthMiddleware.of({
 			betterAuthSession: authenticate,
-			betterAuthSecureSession: authenticate,
 		}),
 	);
 }
@@ -99,8 +105,12 @@ export const RejectingAuthMiddlewareTest = Layer.succeed(
 	AuthMiddleware,
 	AuthMiddleware.of({
 		betterAuthSession: reject,
-		betterAuthSecureSession: reject,
 	}),
 );
 
-export { AuthenticatedUser, AuthMiddleware, UnauthorizedError };
+export {
+	AuthenticatedUser,
+	AuthMiddleware,
+	AuthUnavailableError,
+	UnauthorizedError,
+};

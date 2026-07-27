@@ -11,5 +11,6 @@ export {
 } from "./server/auth-middleware.ts";
 export {
 	AuthenticatedUser,
+	AuthUnavailableError,
 	UnauthorizedError,
 } from "./server/current-user.ts";

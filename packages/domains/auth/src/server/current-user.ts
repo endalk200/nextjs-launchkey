@@ -1,1 +1,5 @@
-export { AuthenticatedUser, UnauthorizedError } from "../api.ts";
+export {
+	AuthenticatedUser,
+	AuthUnavailableError,
+	UnauthorizedError,
+} from "../api.ts";
