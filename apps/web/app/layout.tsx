@@ -24,7 +24,7 @@ export default async function RootLayout({
 		<html lang="en" className={cn("font-sans", geist.variable)}>
 			<body>
 				<Providers
-					telemetryUser={session ? { id: session.user.id } : undefined}
+					initialTelemetryUser={session ? { id: session.user.id } : undefined}
 				>
 					{children}
 				</Providers>

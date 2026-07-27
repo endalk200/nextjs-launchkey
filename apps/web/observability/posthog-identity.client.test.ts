@@ -1,5 +1,8 @@
 import { describe, expect, it, vi } from "vitest";
-import { synchronizePostHogIdentity } from "./posthog-identity.client";
+import {
+	synchronizePostHogIdentity,
+	synchronizePostHogSession,
+} from "./posthog-identity.client";
 
 function makeClient(storedUserId?: string) {
 	return {
@@ -57,5 +60,48 @@ describe("synchronizePostHogIdentity", () => {
 		synchronizePostHogIdentity(client, { id: "user-2" });
 
 		expect(calls).toEqual(["reset", "identify:user-2"]);
+	});
+});
+
+describe("synchronizePostHogSession", () => {
+	it.each([
+		{ error: null, isPending: true, userId: undefined },
+		{
+			error: new Error("network unavailable"),
+			isPending: false,
+			userId: undefined,
+		},
+	])("preserves identity while the session is unresolved", (session) => {
+		const client = makeClient("user-1");
+
+		synchronizePostHogSession(client, session);
+
+		expect(client.reset).not.toHaveBeenCalled();
+		expect(client.identify).not.toHaveBeenCalled();
+	});
+
+	it("clears identity after a confirmed anonymous session", () => {
+		const client = makeClient("user-1");
+
+		synchronizePostHogSession(client, {
+			error: null,
+			isPending: false,
+			userId: undefined,
+		});
+
+		expect(client.reset).toHaveBeenCalledOnce();
+		expect(client.identify).not.toHaveBeenCalled();
+	});
+
+	it("identifies the user from a confirmed client session", () => {
+		const client = makeClient();
+
+		synchronizePostHogSession(client, {
+			error: null,
+			isPending: false,
+			userId: "user-1",
+		});
+
+		expect(client.identify).toHaveBeenCalledWith("user-1");
 	});
 });
