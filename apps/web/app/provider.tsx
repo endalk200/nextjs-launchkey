@@ -3,11 +3,10 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import posthog from "posthog-js";
 import { useEffect, useState } from "react";
-
-type TelemetryUser = {
-	readonly email: string;
-	readonly id: string;
-};
+import {
+	synchronizePostHogIdentity,
+	type TelemetryUser,
+} from "../observability/posthog-identity.client";
 
 export function Providers({
 	children,
@@ -19,8 +18,8 @@ export function Providers({
 	const [queryClient] = useState(() => new QueryClient());
 
 	useEffect(() => {
-		if (telemetryUser && process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) {
-			posthog.identify(telemetryUser.id, { email: telemetryUser.email });
+		if (process.env.NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN) {
+			synchronizePostHogIdentity(posthog, telemetryUser);
 		}
 	}, [telemetryUser]);
 
