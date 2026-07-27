@@ -1,15 +1,17 @@
 import { assert, describe, it } from "@effect/vitest";
 import { Effect, Schema } from "effect";
+import { OpenApi } from "effect/unstable/httpapi";
 import {
-	CreatePostRPC,
-	DeletePostRPC,
-	UpdatePostRPC,
-} from "./post.rpc.definition.ts";
+	CreatePostPayload,
+	PostApi,
+	PostIdParams,
+	UpdatePostPayload,
+} from "./api.ts";
 
-describe("Post RPC definitions", () => {
+describe("PostApi", () => {
 	it.effect("accepts valid create payloads", () =>
 		Effect.sync(() => {
-			const payload = Schema.decodeUnknownSync(CreatePostRPC.payloadSchema)({
+			const payload = Schema.decodeUnknownSync(CreatePostPayload)({
 				title: "Created post",
 				content: "Created body",
 			});
@@ -25,7 +27,7 @@ describe("Post RPC definitions", () => {
 		Effect.sync(() => {
 			assert.throws(
 				() =>
-					Schema.decodeUnknownSync(CreatePostRPC.payloadSchema)({
+					Schema.decodeUnknownSync(CreatePostPayload)({
 						title: "   ",
 						content: "Created body",
 					}),
@@ -38,7 +40,7 @@ describe("Post RPC definitions", () => {
 		Effect.sync(() => {
 			assert.throws(
 				() =>
-					Schema.decodeUnknownSync(CreatePostRPC.payloadSchema)({
+					Schema.decodeUnknownSync(CreatePostPayload)({
 						title: "Created post",
 						content: "   ",
 					}),
@@ -49,43 +51,43 @@ describe("Post RPC definitions", () => {
 
 	it.effect("accepts valid update payloads", () =>
 		Effect.sync(() => {
-			const payload = Schema.decodeUnknownSync(UpdatePostRPC.payloadSchema)({
-				id: "00000000-0000-4000-8000-000000000001",
+			const payload = Schema.decodeUnknownSync(UpdatePostPayload)({
 				title: "Updated post",
 				content: "Updated body",
 			});
 
 			assert.deepStrictEqual(payload, {
-				id: "00000000-0000-4000-8000-000000000001",
 				title: "Updated post",
 				content: "Updated body",
 			});
 		}),
 	);
 
-	it.effect("rejects invalid update ids", () =>
+	it.effect("rejects invalid path ids", () =>
 		Effect.sync(() => {
 			assert.throws(
 				() =>
-					Schema.decodeUnknownSync(UpdatePostRPC.payloadSchema)({
+					Schema.decodeUnknownSync(PostIdParams)({
 						id: "not-a-uuid",
-						title: "Updated post",
-						content: "Updated body",
 					}),
 				/Expected a UUID/,
 			);
 		}),
 	);
 
-	it.effect("rejects invalid delete ids", () =>
+	it.effect("publishes the REST methods and response statuses", () =>
 		Effect.sync(() => {
-			assert.throws(
-				() =>
-					Schema.decodeUnknownSync(DeletePostRPC.payloadSchema)({
-						id: "not-a-uuid",
-					}),
-				/Expected a UUID/,
-			);
+			const specification = OpenApi.fromApi(PostApi);
+			const collection = specification.paths["/api/posts"];
+			const item = specification.paths["/api/posts/{id}"];
+
+			assert.isDefined(collection?.get);
+			assert.isDefined(collection?.post);
+			assert.isDefined(item?.patch);
+			assert.isDefined(item?.delete);
+			assert.property(collection?.post?.responses ?? {}, "201");
+			assert.property(item?.patch?.responses ?? {}, "404");
+			assert.property(item?.delete?.responses ?? {}, "404");
 		}),
 	);
 });

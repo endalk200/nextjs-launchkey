@@ -4,9 +4,10 @@
 	"type": "module",
 	"private": true,
 	"exports": {
+		"./api": "./src/api.ts",
 		"./client": "./src/client.ts",
-		"./rpc": "./src/rpc.ts",
 		"./server": "./src/server.ts",
+		"./server/middleware": "./src/server/auth-middleware.ts",
 		"./test": "./src/server/test-auth.ts"
 	},
 	"scripts": {

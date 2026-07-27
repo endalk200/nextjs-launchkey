@@ -1,9 +1,9 @@
 "use client";
 
-import { Effect, Layer, ManagedRuntime, Scope } from "effect";
-import { FetchHttpClient } from "effect/unstable/http";
-import { RpcClient, RpcSerialization } from "effect/unstable/rpc";
-import { PostRpcs } from "../server/post.rpc.definition.ts";
+import { Effect, ManagedRuntime } from "effect";
+import { FetchHttpClient, HttpClient } from "effect/unstable/http";
+import { HttpApiClient } from "effect/unstable/httpapi";
+import { PostApi } from "../api.ts";
 
 type CreatePostInput = {
 	readonly title: string;
@@ -16,44 +16,42 @@ type UpdatePostInput = {
 	readonly content: string;
 };
 
-const ClientLayer = RpcClient.layerProtocolHttp({ url: "/api/rpc" }).pipe(
-	Layer.provide(RpcSerialization.layerJson),
-	Layer.provide(FetchHttpClient.layer),
-);
+const runtime = ManagedRuntime.make(FetchHttpClient.layer);
+const makePostApiClient = HttpApiClient.make(PostApi);
 
-const runtime = ManagedRuntime.make(ClientLayer);
-const makePostRpcClient = RpcClient.make(PostRpcs);
-
-function runPostRpc<A, E>(
-	effect: Effect.Effect<A, E, RpcClient.Protocol | Scope.Scope>,
+function runPostRequest<A, E>(
+	effect: Effect.Effect<A, E, HttpClient.HttpClient>,
 ): Promise<A> {
-	return runtime.runPromise(Effect.scoped(effect));
+	return runtime.runPromise(effect);
 }
 
 export const PostClient = {
 	list: () =>
-		runPostRpc(
-			Effect.flatMap(makePostRpcClient, (client) => client["Post.List"]()),
+		runPostRequest(
+			Effect.flatMap(makePostApiClient, (client) => client.posts.listPosts({})),
 		),
 
 	create: (input: CreatePostInput) =>
-		runPostRpc(
-			Effect.flatMap(makePostRpcClient, (client) =>
-				client["Post.Create"](input),
+		runPostRequest(
+			Effect.flatMap(makePostApiClient, (client) =>
+				client.posts.createPost({ payload: input }),
 			),
 		),
 
-	update: (input: UpdatePostInput) =>
-		runPostRpc(
-			Effect.flatMap(makePostRpcClient, (client) =>
-				client["Post.Update"](input),
+	update: ({ id, ...payload }: UpdatePostInput) =>
+		runPostRequest(
+			Effect.flatMap(makePostApiClient, (client) =>
+				client.posts.updatePost({
+					params: { id },
+					payload,
+				}),
 			),
 		),
 
 	delete: (id: string) =>
-		runPostRpc(
-			Effect.flatMap(makePostRpcClient, (client) =>
-				client["Post.Delete"]({ id }),
+		runPostRequest(
+			Effect.flatMap(makePostApiClient, (client) =>
+				client.posts.deletePost({ params: { id } }),
 			),
 		),
 

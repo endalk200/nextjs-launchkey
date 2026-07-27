@@ -1,38 +1,28 @@
 import { AuthMiddlewareLive } from "@app/auth/server";
 import { DatabaseLive } from "@app/database";
 import {
+	PostApi,
 	PostHandlers,
 	PostOperationsLive,
 	PostRepositoryDrizzle,
-	PostRpcs,
 } from "@app/post/server";
 import { context, isSpanContextValid, trace } from "@opentelemetry/api";
 import { Layer } from "effect";
-import { HttpMiddleware, HttpRouter } from "effect/unstable/http";
-import { RpcSerialization, RpcServer } from "effect/unstable/rpc";
+import { HttpMiddleware, HttpRouter, HttpServer } from "effect/unstable/http";
+import { HttpApiBuilder } from "effect/unstable/httpapi";
 import { OtelLive } from "../../../observability/otel.node.ts";
 
 export const runtime = "nodejs";
 
-const AppRpcs = PostRpcs;
-
-const AppHandlers = PostHandlers;
-
-const AppOperations = PostOperationsLive;
-
-const AppRepositories = PostRepositoryDrizzle;
-
-const ServerLayer = RpcServer.layerHttp({
-	group: AppRpcs,
-	path: "/api/rpc",
-	protocol: "http",
+const ServerLayer = HttpApiBuilder.layer(PostApi, {
+	openapiPath: "/api/openapi.json",
 }).pipe(
-	Layer.provide(AppHandlers),
-	Layer.provide(AppOperations),
-	Layer.provide(AppRepositories),
+	Layer.provide(PostHandlers),
+	Layer.provide(PostOperationsLive),
+	Layer.provide(PostRepositoryDrizzle),
 	Layer.provide(AuthMiddlewareLive),
 	Layer.provide(DatabaseLive),
-	Layer.provide(RpcSerialization.layerJson),
+	Layer.provide(HttpServer.layerServices),
 	Layer.provideMerge(OtelLive),
 );
 
@@ -86,7 +76,10 @@ function requestWithActiveServerTrace(request: Request) {
 	return new Request(request, { headers });
 }
 
-export const POST = (request: Request) =>
+const handleRequest = (request: Request) =>
 	handler(requestWithActiveServerTrace(request));
 
-export const disposeRpcRoute = webHandler.dispose;
+export const DELETE = handleRequest;
+export const GET = handleRequest;
+export const PATCH = handleRequest;
+export const POST = handleRequest;
