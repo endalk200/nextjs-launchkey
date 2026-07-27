@@ -4,6 +4,7 @@
 	"type": "module",
 	"private": true,
 	"exports": {
+		"./api": "./src/api.ts",
 		"./client": "./src/client.ts",
 		"./server": "./src/server.ts"
 	},

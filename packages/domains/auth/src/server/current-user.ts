@@ -1,1 +1,1 @@
-export { AuthenticatedUser, UnauthorizedError } from "../rpc.ts";
+export { AuthenticatedUser, UnauthorizedError } from "../api.ts";
