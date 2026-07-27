@@ -1,5 +1,5 @@
-import type { Preview } from "@storybook/nextjs-vite";
 import { cn } from "@app/ui/lib/utils";
+import type { Preview } from "@storybook/nextjs-vite";
 import "@app/ui/globals.css";
 import { Geist } from "next/font/google";
 import { Providers } from "../app/provider";
