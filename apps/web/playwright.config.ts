@@ -1,9 +1,7 @@
+import { loadRootEnv } from "@app/config/load-root-env";
 import { defineConfig, devices } from "@playwright/test";
-import nextEnv from "@next/env";
 
-const { loadEnvConfig } = nextEnv as typeof import("@next/env");
-
-loadEnvConfig(process.cwd());
+loadRootEnv();
 
 const baseURL = process.env.NEXT_PUBLIC_APP_URL ?? "http://127.0.0.1:3000";
 

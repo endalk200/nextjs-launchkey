@@ -1,10 +1,26 @@
 {
 	"$schema": "https://turborepo.dev/schema.json",
 	"ui": "stream",
+	"globalPassThroughEnv": [
+		"AUTH_EMAIL_FROM",
+		"BETTER_AUTH_SECRET",
+		"BETTER_AUTH_URL",
+		"CI",
+		"DATABASE_URL",
+		"GITHUB_SHA",
+		"NEXT_OTEL_VERBOSE",
+		"NEXT_PUBLIC_APP_URL",
+		"NEXT_PUBLIC_POSTHOG_*",
+		"OTEL_*",
+		"POSTHOG_*",
+		"RESEND_API_KEY",
+		"VERCEL_ENV",
+		"VERCEL_GIT_COMMIT_SHA"
+	],
 	"tasks": {
 		"build": {
 			"dependsOn": ["^build"],
-			"inputs": ["$TURBO_DEFAULT$", ".env*"],
+			"inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/.env", "$TURBO_ROOT$/.env.example"],
 			"outputs": [".next/**", "!.next/cache/**"]
 		},
 		"lint": {
@@ -17,9 +33,7 @@
 		"check-types": {
 			"dependsOn": ["^check-types"]
 		},
-		"test": {
-			"dependsOn": ["^test"]
-		},
+		"test": {},
 		"test:storybook": {
 			"cache": false
 		},
@@ -29,6 +43,7 @@
 		},
 		"build-storybook": {
 			"dependsOn": ["^build"],
+			"inputs": ["$TURBO_DEFAULT$", "$TURBO_ROOT$/.env", "$TURBO_ROOT$/.env.example"],
 			"outputs": ["storybook-static/**"]
 		},
 		"test:integration": {
@@ -36,6 +51,7 @@
 			"cache": false
 		},
 		"db:generate": {
+			"cache": false,
 			"outputs": ["drizzle/**"]
 		},
 		"test:e2e": {
