@@ -1,7 +1,9 @@
-import type { StorybookConfig } from "@storybook/nextjs-vite";
-
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadRootEnv } from "@app/config/load-root-env";
+import type { StorybookConfig } from "@storybook/nextjs-vite";
+
+loadRootEnv();
 
 function getAbsolutePath(value: string) {
 	return dirname(fileURLToPath(import.meta.resolve(`${value}/package.json`)));

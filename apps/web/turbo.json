@@ -3,43 +3,26 @@
 	"extends": ["//"],
 	"tasks": {
 		"build": {
-			"env": ["NEXT_PUBLIC_APP_URL"],
-			"passThroughEnv": [
-				"AUTH_EMAIL_FROM",
-				"BETTER_AUTH_SECRET",
-				"BETTER_AUTH_URL",
-				"DATABASE_URL",
-				"RESEND_API_KEY"
-			]
+			"env": [
+				"GITHUB_SHA",
+				"NEXT_PUBLIC_APP_URL",
+				"NEXT_PUBLIC_POSTHOG_HOST",
+				"NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN",
+				"NEXT_PUBLIC_POSTHOG_UI_HOST",
+				"POSTHOG_PROJECT_ID",
+				"POSTHOG_RELEASE_VERSION",
+				"POSTHOG_SOURCE_MAPS_ENABLED",
+				"POSTHOG_UI_HOST",
+				"VERCEL_GIT_COMMIT_SHA"
+			],
+			"passThroughEnv": ["POSTHOG_API_KEY"]
 		},
-		"test:e2e": {
-			"env": ["NEXT_PUBLIC_APP_URL"],
-			"passThroughEnv": [
-				"AUTH_EMAIL_FROM",
-				"BETTER_AUTH_SECRET",
-				"BETTER_AUTH_URL",
-				"DATABASE_URL",
-				"RESEND_API_KEY"
-			]
-		},
-		"test:e2e:headed": {
-			"env": ["NEXT_PUBLIC_APP_URL"],
-			"passThroughEnv": [
-				"AUTH_EMAIL_FROM",
-				"BETTER_AUTH_SECRET",
-				"BETTER_AUTH_URL",
-				"DATABASE_URL",
-				"RESEND_API_KEY"
-			]
-		},
-		"test:e2e:ui": {
-			"env": ["NEXT_PUBLIC_APP_URL"],
-			"passThroughEnv": [
-				"AUTH_EMAIL_FROM",
-				"BETTER_AUTH_SECRET",
-				"BETTER_AUTH_URL",
-				"DATABASE_URL",
-				"RESEND_API_KEY"
+		"build-storybook": {
+			"env": [
+				"NEXT_PUBLIC_APP_URL",
+				"NEXT_PUBLIC_POSTHOG_HOST",
+				"NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN",
+				"NEXT_PUBLIC_POSTHOG_UI_HOST"
 			]
 		}
 	}

@@ -4,7 +4,8 @@
 	"type": "module",
 	"private": true,
 	"exports": {
-		"./env": "./src/env.ts"
+		"./env": "./src/env.ts",
+		"./load-root-env": "./src/load-root-env.ts"
 	},
 	"scripts": {
 		"lint": "biome lint .",
@@ -17,6 +18,7 @@
 	},
 	"dependencies": {
 		"@t3-oss/env-core": "^0.13.11",
+		"dotenv": "^17.2.3",
 		"zod": "^4.4.3"
 	},
 	"devDependencies": {

@@ -60,9 +60,43 @@ describe("application environment", () => {
 		const { createAppEnv } = await importEnvModule();
 
 		expect(() => {
-			createAppEnv({ ...completeEnv, NEXT_PUBLIC_APP_URL: " " });
+			createAppEnv({ ...completeEnv, NEXT_PUBLIC_APP_URL: "not-a-url" });
 		}).toThrow(
-			"Invalid application environment variables:\n- NEXT_PUBLIC_APP_URL: NEXT_PUBLIC_APP_URL is required.",
+			"Invalid application environment variables:\n- NEXT_PUBLIC_APP_URL: NEXT_PUBLIC_APP_URL must be a valid URL.",
 		);
+	});
+
+	it.each([
+		"DATABASE_URL",
+		"BETTER_AUTH_URL",
+		"NEXT_PUBLIC_APP_URL",
+	] as const)("rejects a malformed %s", async (name) => {
+		const { createAppEnv } = await importEnvModule();
+		const runtimeEnv = { ...completeEnv, [name]: "not-a-url" };
+
+		expect(() => {
+			const env = createAppEnv(runtimeEnv);
+
+			return env[name];
+		}).toThrow(new RegExp(`${name}: ${name} must be a valid URL.`));
+	});
+
+	it("accepts a root-relative PostHog reverse proxy", async () => {
+		const { createAppEnv } = await importEnvModule();
+		const env = createAppEnv({
+			...completeEnv,
+			NEXT_PUBLIC_POSTHOG_HOST: "/insights",
+			NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "phc_test",
+		});
+
+		expect(env.NEXT_PUBLIC_POSTHOG_HOST).toBe("/insights");
+	});
+
+	it("rejects an invalid OTel sample ratio", async () => {
+		const { createAppEnv } = await importEnvModule();
+
+		expect(() =>
+			createAppEnv({ ...completeEnv, OTEL_TRACES_SAMPLER_ARG: "2" }),
+		).toThrow(/OTEL_TRACES_SAMPLER_ARG/);
 	});
 });

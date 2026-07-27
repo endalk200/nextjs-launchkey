@@ -1,10 +1,10 @@
-import { test as setup } from "@playwright/test";
-import nextEnv from "@next/env";
-import { createNodeDrizzleClient, like } from "@app/database";
-import { user as userTable } from "@app/database/schema";
 import { mkdir } from "node:fs/promises";
 import { dirname } from "node:path";
 import { fileURLToPath } from "node:url";
+import { loadRootEnv } from "@app/config/load-root-env";
+import { createNodeDrizzleClient, like } from "@app/database";
+import { user as userTable } from "@app/database/schema";
+import { test as setup } from "@playwright/test";
 
 const authFile = fileURLToPath(
 	new URL("../test-results/.auth/user.json", import.meta.url),
@@ -12,12 +12,11 @@ const authFile = fileURLToPath(
 const signOutAuthFile = fileURLToPath(
 	new URL("../test-results/.auth/sign-out-user.json", import.meta.url),
 );
-const { loadEnvConfig } = nextEnv as typeof import("@next/env");
+loadRootEnv();
 
 setup("authenticate", async ({ baseURL, browser }) => {
-	loadEnvConfig(process.cwd());
-
-	const { testAuth } = await import("@app/auth/test");
+	const { createTestAuth } = await import("@app/auth/testing/e2e");
+	const testAuth = createTestAuth();
 	const authContext = await testAuth.$context;
 	const cookieDomain = new URL(baseURL ?? "http://127.0.0.1:3000").hostname;
 

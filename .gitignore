@@ -5,12 +5,13 @@ node_modules
 .pnp
 .pnp.js
 
-# Local env files
+# The repository root is the only supported location for local environment data.
 .env
 .env.local
 .env.development.local
 .env.test.local
 .env.production.local
+!.env.example
 
 # Testing
 coverage
