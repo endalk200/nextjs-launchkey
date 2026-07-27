@@ -49,7 +49,10 @@ export function synchronizePostHogSession(
 	client: PostHogIdentityClient,
 	session: ReactiveSession,
 ): void {
-	if (session.isPending || session.error !== null) {
+	if (
+		session.isPending ||
+		(session.error !== null && session.error !== undefined)
+	) {
 		return;
 	}
 
