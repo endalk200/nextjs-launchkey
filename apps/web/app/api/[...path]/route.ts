@@ -18,6 +18,7 @@ import {
 	HttpServerResponse,
 } from "effect/unstable/http";
 import { HttpApiBuilder } from "effect/unstable/httpapi";
+import { getExceptionAttributes } from "../../../observability/logger.node.ts";
 import { OtelLive } from "../../../observability/otel.node.ts";
 import { captureServerException } from "../../../observability/posthog.node.ts";
 import { readPostHogRequestContext } from "../../../observability/request-context.ts";
@@ -88,8 +89,11 @@ const captureUnhandledErrors = HttpMiddleware.make((app) =>
 			};
 
 			return Effect.all([
-				Effect.logError("Unhandled Effect HTTP error", error).pipe(
-					Effect.annotateLogs(logAnnotations),
+				Effect.logError("Unhandled Effect HTTP error").pipe(
+					Effect.annotateLogs({
+						...logAnnotations,
+						...getExceptionAttributes(error),
+					}),
 				),
 				Effect.promise(() =>
 					captureServerException(error, {
