@@ -9,6 +9,9 @@ import {
 	uuid,
 } from "drizzle-orm/pg-core";
 
+// NOTE: `$onUpdate` on the `updatedAt` columns below runs in the Drizzle
+// client only. Writes that bypass Drizzle (raw SQL, other clients) will not
+// refresh `updatedAt`; add a database trigger if that ever becomes a problem.
 const date = (name: string) => timestamp(name, { mode: "date", precision: 3 });
 
 export const user = pgTable(
@@ -109,23 +112,25 @@ export const verification = pgTable(
 	(table) => [index("verification_identifier_idx").on(table.identifier)],
 );
 
+// Column names are camelCase to match the Better Auth tables above, keeping a
+// single naming convention across the whole schema.
 export const posts = pgTable(
 	"posts",
 	{
 		id: uuid().defaultRandom().primaryKey(),
-		userId: text("user_id").notNull(),
+		userId: text("userId").notNull(),
 		title: text().notNull(),
 		content: text().notNull(),
-		createdAt: date("created_at").defaultNow().notNull(),
-		updatedAt: date("updated_at")
+		createdAt: date("createdAt").defaultNow().notNull(),
+		updatedAt: date("updatedAt")
 			.defaultNow()
 			.$onUpdate(() => new Date())
 			.notNull(),
 	},
 	(table) => [
-		index("posts_user_id_created_at_idx").on(table.userId, table.createdAt),
+		index("posts_userId_createdAt_idx").on(table.userId, table.createdAt),
 		foreignKey({
-			name: "posts_user_id_fkey",
+			name: "posts_userId_fkey",
 			columns: [table.userId],
 			foreignColumns: [user.id],
 		})
