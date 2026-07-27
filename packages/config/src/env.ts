@@ -22,6 +22,22 @@ function readNodeEnv(runtimeEnv: RuntimeEnv) {
 	return "development";
 }
 
+function isPostHogBrowserHost(value: string): boolean {
+	try {
+		if (value.startsWith("/")) {
+			const base = new URL("https://root-relative.invalid");
+
+			return new URL(value, base).origin === base.origin;
+		}
+
+		const url = new URL(value);
+
+		return url.protocol === "http:" || url.protocol === "https:";
+	} catch {
+		return false;
+	}
+}
+
 export function createAppEnv(runtimeEnv: RuntimeEnv = process.env) {
 	const nodeEnv = readNodeEnv(runtimeEnv);
 
@@ -68,7 +84,7 @@ export function createAppEnv(runtimeEnv: RuntimeEnv = process.env) {
 			NEXT_PUBLIC_POSTHOG_HOST: z
 				.string()
 				.refine(
-					(value) => value.startsWith("/") || URL.canParse(value),
+					isPostHogBrowserHost,
 					"NEXT_PUBLIC_POSTHOG_HOST must be a URL or root-relative path.",
 				)
 				.optional(),

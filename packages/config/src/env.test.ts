@@ -92,6 +92,33 @@ describe("application environment", () => {
 		expect(env.NEXT_PUBLIC_POSTHOG_HOST).toBe("/insights");
 	});
 
+	it("accepts an absolute HTTPS PostHog host", async () => {
+		const { createAppEnv } = await importEnvModule();
+		const env = createAppEnv({
+			...completeEnv,
+			NEXT_PUBLIC_POSTHOG_HOST: "https://eu.i.posthog.com",
+			NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "phc_test",
+		});
+
+		expect(env.NEXT_PUBLIC_POSTHOG_HOST).toBe("https://eu.i.posthog.com");
+	});
+
+	it.each([
+		"//collector.example",
+		"/\\collector.example",
+		"ftp://collector.example",
+	])("rejects an unsafe PostHog host: %s", async (host) => {
+		const { createAppEnv } = await importEnvModule();
+
+		expect(() =>
+			createAppEnv({
+				...completeEnv,
+				NEXT_PUBLIC_POSTHOG_HOST: host,
+				NEXT_PUBLIC_POSTHOG_PROJECT_TOKEN: "phc_test",
+			}),
+		).toThrow(/NEXT_PUBLIC_POSTHOG_HOST/);
+	});
+
 	it("rejects an invalid OTel sample ratio", async () => {
 		const { createAppEnv } = await importEnvModule();
 
