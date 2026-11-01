@@ -28,7 +28,7 @@
 		"@react-email/components": "^1.0.12",
 		"@react-email/render": "^2.0.8",
 		"@tanstack/react-form": "^1.33.0",
-		"better-auth": "1.7.0-rc.2",
+		"better-auth": "1.7.7",
 		"drizzle-orm": "1.0.0-rc.4",
 		"effect": "4.0.0-beta.101",
 		"react": "^19.2.6",
