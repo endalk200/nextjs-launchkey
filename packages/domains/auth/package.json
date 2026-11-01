@@ -24,7 +24,7 @@
 		"@app/config": "*",
 		"@app/database": "*",
 		"@app/ui": "*",
-		"@better-auth/drizzle-adapter": "1.7.0-rc.2",
+		"@better-auth/drizzle-adapter": "1.7.7",
 		"@react-email/components": "^1.0.12",
 		"@react-email/render": "^2.0.8",
 		"@tanstack/react-form": "^1.33.0",
